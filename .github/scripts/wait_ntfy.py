@@ -8,6 +8,7 @@ import sys
 import time
 import urllib.request
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # Windows-Konsole kann sonst keine Emojis
 topic, pattern, timeout = sys.argv[1], sys.argv[2], float(sys.argv[3])
 deadline = time.time() + timeout
 seen = set()
@@ -20,8 +21,9 @@ while time.time() < deadline:
                     continue
                 seen.add(msg["id"])
                 text = f"{msg.get('title', '')} | {msg.get('message', '')}"
+                found = re.search(pattern, text)
                 print("ntfy:", text, flush=True)
-                if re.search(pattern, text):
+                if found:
                     sys.exit(0)
     except Exception as e:  # noqa: BLE001
         print("Abfrage fehlgeschlagen:", e, flush=True)

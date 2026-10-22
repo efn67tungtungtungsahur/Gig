@@ -24,10 +24,12 @@ from gig.reddit import (  # noqa: E402
     RateLimited,
     RedditError,
     RedditSession,
+    Unavailable,
     open_browser,
 )
 
 POSTED = []
+SUBSCRIBED = []
 
 
 class FakeReddit(BaseHTTPRequestHandler):
@@ -53,8 +55,12 @@ class FakeReddit(BaseHTTPRequestHandler):
             return self._send(200, {"kind": "t2", "data": {"name": "ferdi_123", "modhash": "mh123"}}
                               if self._logged_in() else {})
         if url.path == "/r/RepWatchClud/new.json":
-            assert parse_qs(url.query)["raw_json"] == ["1"]
-            return self._send(200, {"kind": "Listing", "data": {"children": [
+            query = parse_qs(url.query)
+            assert query["raw_json"] == ["1"]
+            if query.get("after") == ["t3_p2"]:  # zweite Seite
+                return self._send(200, {"kind": "Listing", "data": {"after": None, "children": [
+                    {"kind": "t3", "data": make_post("p3", title="Older giveaway")}]}})
+            return self._send(200, {"kind": "Listing", "data": {"after": "t3_p2", "children": [
                 {"kind": "t3", "data": make_post()}, {"kind": "t3", "data": make_post("p2", title="QC")}]}})
         if url.path == "/r/private/new.json":
             return self._send(403, {"reason": "private", "error": 403})
@@ -73,10 +79,14 @@ class FakeReddit(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length") or 0)
         form = {k: v[0] for k, v in parse_qs(self.rfile.read(length).decode()).items()}
-        if urlparse(self.path).path != "/api/comment":
-            return self._send(404, {})
+        path = urlparse(self.path).path
         if not self._logged_in() or form.get("uh") != "mh123":
             return self._send(403, {"error": 403})
+        if path == "/api/subscribe":
+            SUBSCRIBED.append((form["action"], form["sr_name"]))
+            return self._send(200, {})
+        if path != "/api/comment":
+            return self._send(404, {})
         if form["text"] == "ratelimit":
             return self._send(200, {"json": {"ratelimit": 299.5, "errors": [
                 ["RATELIMIT", "Looks like you've been doing that a lot. Take a break for 5 minutes", "ratelimit"]]}})
@@ -117,6 +127,11 @@ def test_reads_and_comments(browser, server):
 
     posts = reddit.new_posts("RepWatchClud")
     assert [p["id"] for p in posts] == ["abc123", "p2"]
+    assert [p["id"] for p in reddit.new_posts("RepWatchClud", pages=4)] == ["abc123", "p2", "p3"]
+
+    reddit.subscribe("RepWatchClud")
+    reddit.subscribe("u_ContributionAble4509")
+    assert SUBSCRIBED == [("sub", "RepWatchClud"), ("sub", "u_ContributionAble4509")]
 
     post, comments = reddit.thread("abc123")
     assert post["id"] == "abc123"
@@ -137,9 +152,10 @@ def test_errors(browser, server):
     ctx, page = browser
     ctx.add_cookies([{"name": "session", "value": "ok", "url": server}])
     reddit = RedditSession(page, server)
-    with pytest.raises(RedditError, match="private") as e:
+    with pytest.raises(Unavailable, match="private"):
         reddit.new_posts("private")
-    assert not isinstance(e.value, AccessBlocked)
+    with pytest.raises(Unavailable, match="404"):
+        reddit.new_posts("doesnotexist")
     with pytest.raises(AccessBlocked):
         reddit._call("GET", "/blocked/new.json")
     with pytest.raises(AccessBlocked):

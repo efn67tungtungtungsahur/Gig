@@ -3,11 +3,27 @@
 # Ändere nur config.toml, nicht diese Vorlage.
 
 [search]
-# Subreddits, in denen nach Giveaways gesucht wird (ohne "r/")
-subreddits = ["RepWatchClud"]
+# Subreddits, deren neueste Posts regelmäßig durchsucht werden (ohne "r/").
+# Findet die Reddit-weite Suche Giveaways in weiteren Uhren-Subreddits, merkt sich
+# der Bot diese automatisch dazu.
+subreddits = [
+  "RepWatchClud", "RepCulture_Timepieces", "RepWatch", "RepTime", "ChinaTime",
+  "repwatchbuysell", "1688Time", "RepTimeQC",
+]
 
-# Optional: Reddit-weite Suchen, z. B. ["rep watch giveaway"]. Leer = aus.
-search_queries = []
+# Reddit-weite Suchen (alle 5 Minuten)
+search_queries = [
+  "giveaway rep watch", "giveaway replica watch", "giveaway rolex rep", "giveaway VSF",
+  "giveaway clean factory", "watch giveaway", "uhr gewinnspiel",
+]
+
+# Treffer der Reddit-weiten Suche zählen nur, wenn eines dieser Wörter vorkommt
+# (damit der Bot nicht bei Gaming- oder Sneaker-Giveaways mitmacht)
+watch_keywords = [
+  "watch", "rolex", "omega", "patek", "audemars", "royal oak", "cartier", "tudor", "seiko",
+  "submariner", "daytona", "gmt", "nautilus", "datejust", "speedmaster", "vsf", "clean factory",
+  "zf", "ppf", "apsf", "3135", "3235", "rep", "replica", "uhr",
+]
 
 # Ein Post gilt als Giveaway, wenn Titel oder Flair eines dieser Wörter enthält
 giveaway_keywords = ["giveaway", "give away", "gewinnspiel", "raffle"]
@@ -18,15 +34,20 @@ exclude_keywords = [
   "winner:", "winners:", "result", "congrat", "ended", "closed", "is over", "gewinner",
 ]
 
-# Ältere Posts werden ignoriert (Stunden)
-max_post_age_hours = 168
+# Posts ohne erkennbares Enddatum zählen höchstens so lange (Stunden).
+# Steht ein Enddatum in der Beschreibung („ends in 48h“, „closes Oct 25“), gilt das.
+max_post_age_hours = 240
+
+# Einmal am Tag sucht der Bot tiefer (so viele Seiten à 100 Posts pro Subreddit),
+# um laufende Giveaways zu finden, die er noch nicht kennt
+backfill_pages = 4
 
 [enter]
 # true  = der Bot kommentiert automatisch und nimmt so teil
 # false = nur Benachrichtigung aufs Handy, du kommentierst selbst
 auto_comment = true
 
-# Einer davon wird zufällig als Kommentar gepostet
+# Einer davon wird zufällig gepostet, wenn die Beschreibung nichts Bestimmtes verlangt
 comments = [
   "I'm in! Good luck everyone 🍀",
   "Count me in, that's a beautiful piece ⌚🔥",
@@ -34,12 +55,32 @@ comments = [
   "Great giveaway, fingers crossed 🤞",
 ]
 
-# Verlangt der Post z. B. 'comment "Sprite" to enter', wird genau das kommentiert
+# Der Bot liest die Beschreibung: Verlangt sie z. B. 'comment "Sprite"', eine Zahl
+# („pick a number 1-100“ → eine noch freie Zahl) oder deine Lieblingsuhr, schreibt er genau das.
 use_requested_comment = true
 
+# Geforderten Communities beitreten und dem Host folgen, wenn verlangt
+join_communities = true
+
+# Antworten auf „What's your dream watch?“
+dream_watches = [
+  "Rolex GMT-Master II Sprite", "Rolex Submariner Date", "Rolex Daytona Panda",
+  "AP Royal Oak 15500", "Patek Philippe Nautilus 5711", "Omega Speedmaster Moonwatch",
+]
+
+# Antworten auf „Why do you want to win?“
+why_answers = [
+  "Been saving for my first proper piece for ages – this would make my year! 🙏",
+  "I've been following this community for a while and would love to finally wear one ⌚",
+]
+
+# Reddit-Namen von Freunden, die markiert werden dürfen, wenn ein Giveaway „tag a friend“ verlangt.
+# Leer = der Bot markiert niemanden und sagt dir Bescheid.
+friends = []
+
 # Schutz vor Spam / Reddit-Sperren
-max_comments_per_day = 20
-min_seconds_between_comments = 90
+max_comments_per_day = 30
+min_seconds_between_comments = 60
 
 [wins]
 # Wörter, die in Antworten/Nachrichten auf einen Gewinn hindeuten
@@ -64,8 +105,11 @@ ntfy_topic = ""
 notify_entries = true
 
 [bot]
-# Wie oft nach neuen Giveaways gesucht wird (Sekunden)
-poll_seconds = 180
+# Wie oft die Subreddits nach ganz frischen Giveaways durchsucht werden (Sekunden)
+poll_seconds = 60
+
+# Wie oft die Reddit-weite Suche läuft (Sekunden)
+search_seconds = 300
 
 # Wie oft auf Gewinne geprüft wird (Sekunden)
 win_check_seconds = 600

@@ -24,12 +24,18 @@ class ConfigError(Exception):
 class Config:
     subreddits: list[str]
     search_queries: list[str]
+    watch_keywords: list[str]
     giveaway_keywords: list[str]
     exclude_keywords: list[str]
     max_post_age_hours: float
+    backfill_pages: int
     auto_comment: bool
     comments: list[str]
     use_requested_comment: bool
+    join_communities: bool
+    dream_watches: list[str]
+    why_answers: list[str]
+    friends: list[str]
     max_comments_per_day: int
     min_seconds_between_comments: int
     win_keywords: list[str]
@@ -38,6 +44,7 @@ class Config:
     ntfy_topic: str
     notify_entries: bool
     poll_seconds: int
+    search_seconds: int
     win_check_seconds: int
     headless: bool
     browser_channel: str
@@ -65,12 +72,18 @@ def from_dict(raw: dict, data_dir: Path) -> Config:
     cfg = Config(
         subreddits=[s.strip().removeprefix("r/") for s in search.get("subreddits", []) if s.strip()],
         search_queries=[q for q in search.get("search_queries", []) if q.strip()],
+        watch_keywords=_lower(search.get("watch_keywords", ["watch", "rolex", "rep"])),
         giveaway_keywords=_lower(search.get("giveaway_keywords", ["giveaway"])),
         exclude_keywords=_lower(search.get("exclude_keywords", [])),
-        max_post_age_hours=float(search.get("max_post_age_hours", 168)),
+        max_post_age_hours=float(search.get("max_post_age_hours", 240)),
+        backfill_pages=max(1, int(search.get("backfill_pages", 4))),
         auto_comment=bool(enter.get("auto_comment", True)),
         comments=[c for c in enter.get("comments", []) if c.strip()],
         use_requested_comment=bool(enter.get("use_requested_comment", True)),
+        join_communities=bool(enter.get("join_communities", True)),
+        dream_watches=[w for w in enter.get("dream_watches", []) if w.strip()],
+        why_answers=[w for w in enter.get("why_answers", []) if w.strip()],
+        friends=[f.strip().removeprefix("u/") for f in enter.get("friends", []) if f.strip()],
         max_comments_per_day=int(enter.get("max_comments_per_day", 20)),
         min_seconds_between_comments=int(enter.get("min_seconds_between_comments", 90)),
         win_keywords=_lower(wins.get("win_keywords", ["congrat", "you won", "winner"])),
@@ -78,7 +91,8 @@ def from_dict(raw: dict, data_dir: Path) -> Config:
         ntfy_server=str(notify.get("ntfy_server", "https://ntfy.sh")).rstrip("/"),
         ntfy_topic=str(notify.get("ntfy_topic", "")).strip(),
         notify_entries=bool(notify.get("notify_entries", True)),
-        poll_seconds=max(60, int(bot.get("poll_seconds", 180))),
+        poll_seconds=max(30, int(bot.get("poll_seconds", 60))),
+        search_seconds=max(60, int(bot.get("search_seconds", 300))),
         win_check_seconds=max(120, int(bot.get("win_check_seconds", 600))),
         headless=bool(bot.get("headless", True)),
         browser_channel=str(bot.get("browser_channel", "")).strip(),

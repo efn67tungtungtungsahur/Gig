@@ -40,6 +40,10 @@ class AccessBlocked(RedditError):
     pass
 
 
+class Unavailable(RedditError):
+    """Subreddit/Seite gibt es nicht oder ist privat, gesperrt, in Quarantäne."""
+
+
 class RateLimited(RedditError):
     def __init__(self, message: str, seconds: int):
         super().__init__(message)
@@ -129,8 +133,10 @@ class RedditSession:
             if status in (401, 403):
                 reason = self._reason(text)
                 if reason:
-                    raise RedditError(f"{path}: nicht zugänglich ({reason})")
+                    raise Unavailable(f"{path}: nicht zugänglich ({reason})")
                 raise AccessBlocked(f"Reddit verweigert den Zugriff (HTTP {status}). Gig versucht es automatisch weiter.")
+            if status == 404:
+                raise Unavailable(f"{path}: nicht gefunden (HTTP 404)")
             if status >= 400:
                 raise RedditError(f"HTTP {status} bei {path}")
             try:
@@ -167,12 +173,23 @@ class RedditSession:
         children = data.get("data", {}).get("children", []) if isinstance(data, dict) else []
         return [c for c in children if kind is None or c.get("kind") == kind]
 
-    def new_posts(self, subreddit: str, limit: int = 50) -> list[dict]:
-        data = self._call("GET", f"/r/{subreddit}/new.json", {"limit": limit, "raw_json": 1})
-        return [c["data"] for c in self._children(data, "t3")]
+    def new_posts(self, subreddit: str, limit: int = 100, pages: int = 1) -> list[dict]:
+        """Neueste Posts; mit pages > 1 auch ältere (je Seite bis zu 100)."""
+        posts: list[dict] = []
+        after = None
+        for _ in range(pages):
+            params = {"limit": limit, "raw_json": 1}
+            if after:
+                params["after"] = after
+            data = self._call("GET", f"/r/{subreddit}/new.json", params)
+            posts += [c["data"] for c in self._children(data, "t3")]
+            after = data.get("data", {}).get("after") if isinstance(data, dict) else None
+            if not after:
+                break
+        return posts
 
-    def search(self, query: str, limit: int = 50) -> list[dict]:
-        params = {"q": query, "sort": "new", "t": "week", "type": "link", "limit": limit, "raw_json": 1}
+    def search(self, query: str, period: str = "week", limit: int = 100) -> list[dict]:
+        params = {"q": query, "sort": "new", "t": period, "type": "link", "limit": limit, "raw_json": 1}
         data = self._call("GET", "/search.json", params)
         return [c["data"] for c in self._children(data, "t3")]
 
@@ -191,6 +208,13 @@ class RedditSession:
         return self._children(data)
 
     # --- Schreiben ----------------------------------------------------------
+
+    def subscribe(self, name: str) -> None:
+        """Community beitreten (name = Subreddit) bzw. Nutzer folgen (name = „u_Nutzername“)."""
+        if not self._modhash:
+            self.me()
+        self._call("POST", "/api/subscribe",
+                   form={"action": "sub", "sr_name": name, "uh": self._modhash or "", "api_type": "json"})
 
     def post_comment(self, fullname: str, text: str) -> str:
         """Kommentiert einen Post. Gibt die ID des neuen Kommentars zurück (t1_...)."""

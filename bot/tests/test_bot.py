@@ -2,7 +2,7 @@ from conftest import make_comment, make_post
 
 from gig.bot import GiveawayBot
 from gig.detect import flatten_comments
-from gig.reddit import CommentRejected, NotLoggedIn, RateLimited
+from gig.reddit import CommentRejected, NotLoggedIn, RateLimited, Unavailable
 from gig.state import State
 
 NOW = 1_000_000.0 + 3600
@@ -16,13 +16,23 @@ class FakeReddit:
         self.threads = {}
         self.inbox_items = []
         self.posted = []
+        self.subscribed = []
+        self.search_results = []
+        self.polled = []
+        self.unavailable = set()
         self.fail_with = None
 
-    def new_posts(self, subreddit):
+    def new_posts(self, subreddit, pages=1):
+        self.polled.append((subreddit, pages))
+        if subreddit in self.unavailable:
+            raise Unavailable(f"r/{subreddit}: nicht zugänglich (private)")
         return list(self.posts)
 
-    def search(self, query):
-        return []
+    def search(self, query, period="week"):
+        return list(self.search_results)
+
+    def subscribe(self, name):
+        self.subscribed.append(name)
 
     def user_comments(self, username):
         return list(self.my_comments)
@@ -31,7 +41,7 @@ class FakeReddit:
         return list(self.inbox_items)
 
     def thread(self, post_id):
-        post = next(p for p in self.posts if p["id"] == post_id)
+        post = next(p for p in self.posts + self.search_results if p["id"] == post_id)
         return post, flatten_comments(self.threads.get(post_id, []))
 
     def post_comment(self, fullname, text):
@@ -229,7 +239,7 @@ def test_notifications_are_kept_until_delivered(cfg, tmp_path):
 
 def test_logout_is_reported_once_and_bot_keeps_running(cfg, tmp_path):
     reddit = FakeReddit([make_post()])
-    reddit.new_posts = lambda sub: (_ for _ in ()).throw(NotLoggedIn("weg"))
+    reddit.new_posts = lambda sub, **kw: (_ for _ in ()).throw(NotLoggedIn("weg"))
     bot, clock = make_bot(cfg, tmp_path, reddit)
     bot.tick()
     clock.t += 20
@@ -279,11 +289,11 @@ def test_escalation_to_caller(cfg, tmp_path):
     from gig.reddit import AccessBlocked
 
     reddit = FakeReddit([])
-    reddit.new_posts = lambda sub: (_ for _ in ()).throw(AccessBlocked("403"))
+    reddit.new_posts = lambda sub, **kw: (_ for _ in ()).throw(AccessBlocked("403"))
     bot, _ = make_bot(cfg, tmp_path, reddit, escalate_blocked=True)
     with pytest.raises(AccessBlocked):
         bot.tick()
-    reddit.new_posts = lambda sub: (_ for _ in ()).throw(NotLoggedIn("weg"))
+    reddit.new_posts = lambda sub, **kw: (_ for _ in ()).throw(NotLoggedIn("weg"))
     bot, _ = make_bot(cfg, tmp_path, reddit, escalate_login=True)
     with pytest.raises(NotLoggedIn):
         bot.tick()

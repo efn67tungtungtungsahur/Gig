@@ -13,8 +13,8 @@ from .detect import (
     inbox_signal,
     is_announcement,
     is_giveaway,
+    is_watch_related,
     mentions_user,
-    requested_comment,
     thread_signals,
 )
 from .pairing import STATUS_TAG
@@ -25,7 +25,9 @@ from .reddit import (
     NotLoggedIn,
     RateLimited,
     RedditError,
+    Unavailable,
 )
+from .rules import analyze, compose_comment, host_announced_winner, taken_numbers
 from .state import DAY, Giveaway, State
 
 log = logging.getLogger("gig")
@@ -33,6 +35,7 @@ log = logging.getLogger("gig")
 TICK_SECONDS = 15
 PROBLEM_REPEAT_SECONDS = 6 * 3600
 HEARTBEAT_SECONDS = 30 * 60
+THREADS_PER_CHECK = 30  # Giveaway-Threads pro Gewinn-Prüfung (Rest kommt beim nächsten Mal dran)
 
 
 class GiveawayBot:
@@ -48,6 +51,7 @@ class GiveawayBot:
         self.rng = rng or random.Random()
         self._next_scan = 0.0
         self._next_win_check = 0.0
+        self._next_search = 0.0
         self._has_problem = False
         self._failing_since = 0.0
         # Bestimmte Probleme an den Aufrufer weitergeben, der sie besser lösen kann
@@ -130,19 +134,51 @@ class GiveawayBot:
 
     # --- Giveaways finden -----------------------------------------------------
 
+    def _subreddits(self, now: float) -> list[str]:
+        """Eingestellte + selbst entdeckte Subreddits, ohne gerade nicht erreichbare."""
+        names = list(self.cfg.subreddits) + list(self.state.discovered_subreddits)
+        out, seen = [], set()
+        for name in names:
+            key = name.lower()
+            if key in seen or now - self.state.unavailable_subreddits.get(key, 0) < DAY:
+                continue
+            seen.add(key)
+            out.append(name)
+        return out
+
     def scan(self) -> None:
+        now = self.clock()
+        deep = now - self.state.last_deep_scan >= DAY  # einmal am Tag auch ältere, noch laufende Giveaways
         posts: list[dict] = []
-        for sub in self.cfg.subreddits:
+        for sub in self._subreddits(now):
             try:
-                posts += self.reddit.new_posts(sub)
+                posts += self.reddit.new_posts(sub, pages=self.cfg.backfill_pages if deep else 1)
             except (NotLoggedIn, AccessBlocked):
                 raise
+            except Unavailable as e:
+                log.info("r/%s übersprungen: %s", sub, e)
+                self.state.unavailable_subreddits[sub.lower()] = now
             except RedditError as e:
                 log.warning("r/%s: %s", sub, e)
-        for query in self.cfg.search_queries:
-            posts += self.reddit.search(query)
 
-        now = self.clock()
+        if deep or now >= self._next_search:
+            self._next_search = now + self.cfg.search_seconds
+            for query in self.cfg.search_queries:
+                try:
+                    found = self.reddit.search(query, period="month" if deep else "week")
+                except (NotLoggedIn, AccessBlocked):
+                    raise
+                except RedditError as e:
+                    log.warning("Suche „%s“: %s", query, e)
+                    continue
+                for post in found:
+                    if is_watch_related(post, self.cfg):
+                        posts.append(post)
+                        if is_giveaway(post, self.cfg):
+                            self._discover(post.get("subreddit"), now)
+        if deep:
+            self.state.last_deep_scan = now
+
         new: list[Giveaway] = []
         for post in posts:
             pid = post.get("id")
@@ -150,9 +186,13 @@ class GiveawayBot:
                 continue
             self.state.seen_posts[pid] = now
             self._check_post_for_win(post)
-            if not self._enterable(post, now):
+            if not self._enterable(post):
+                continue
+            req = analyze(post, now)
+            if req.ended or not self._open(post.get("created_utc"), req.ends_at, now):
                 continue
             gw = Giveaway.from_post(post, now)
+            gw.ends_at = req.ends_at
             self.state.giveaways[pid] = gw
             new.append(gw)
             log.info("🎁 Neues Giveaway: %s (r/%s, u/%s)", gw.title, gw.subreddit, gw.author)
@@ -164,22 +204,42 @@ class GiveawayBot:
             if gw.entered:
                 log.info("   Schon teilgenommen: %s", gw.title)
             elif not self.auto_enter:
+                req = analyze(self._post_of(gw), now)
+                suggestion = compose_comment(req, self.cfg, self.rng)
+                todo = req.todo_for_user(friends_tagged=bool(self.cfg.friends))
                 self._signal(Signal(
                     key=f"new:{gw.id}",
                     title="🎁 Neues Giveaway",
-                    message=f"{gw.title}\nr/{gw.subreddit} – tippe zum Öffnen und Kommentieren.",
+                    message=(f"{gw.title}\nr/{gw.subreddit} · Vorschlag: „{suggestion}“"
+                             + (f"\n👉 Außerdem: {', '.join(todo)}" if todo else "")),
                     url=gw.url,
                     priority=4,
                 ))
 
-    def _enterable(self, post: dict, now: float) -> bool:
-        if now - float(post.get("created_utc", now)) > self.cfg.max_post_age_hours * 3600:
-            return False
+    def _discover(self, subreddit: str | None, now: float) -> None:
+        if not subreddit or subreddit.lower() in {s.lower() for s in self.cfg.subreddits}:
+            return
+        if subreddit not in self.state.discovered_subreddits:
+            log.info("🔎 Neues Giveaway-Subreddit entdeckt: r/%s – wird ab jetzt mit durchsucht", subreddit)
+        self.state.discovered_subreddits[subreddit] = now
+
+    def _open(self, created_utc, ends_at: float | None, now: float) -> bool:
+        """Läuft das Giveaway (vermutlich) noch?"""
+        if ends_at is not None:
+            return now < ends_at
+        return now - float(created_utc or now) <= self.cfg.max_post_age_hours * 3600
+
+    def _enterable(self, post: dict) -> bool:
         if post.get("locked") or post.get("archived") or post.get("removed_by_category"):
             return False
         if (post.get("author") or "").lower() == self.username.lower():
             return False
         return is_giveaway(post, self.cfg)
+
+    @staticmethod
+    def _post_of(gw: Giveaway) -> dict:
+        return {"id": gw.id, "title": gw.title, "selftext": gw.selftext, "author": gw.author,
+                "created_utc": gw.created_utc}
 
     def _check_post_for_win(self, post: dict) -> None:
         author = post.get("author") or ""
@@ -231,22 +291,74 @@ class GiveawayBot:
             return False
         return True
 
+    def _deadline(self, gw: Giveaway) -> float:
+        return gw.ends_at if gw.ends_at is not None else gw.created_utc + self.cfg.max_post_age_hours * 3600
+
     def enter_due(self) -> None:
+        """Nimmt am Giveaway teil, das als Nächstes endet."""
         if not self.auto_enter:
             return
         now = self.clock()
-        max_age = self.cfg.max_post_age_hours * 3600
         due = sorted(
             (g for g in self.state.giveaways.values()
-             if not g.entered and not g.failed and g.retry_at <= now and now - g.created_utc <= max_age),
-            key=lambda g: g.created_utc,
+             if not g.entered and not g.failed and g.retry_at <= now and self._open(g.created_utc, g.ends_at, now)),
+            key=self._deadline,
         )
         if due and self._can_comment(now):
             self._enter(due[0], now)
 
+    def _join(self, name: str, label: str, now: float, done: list[str], todo: list[str]) -> None:
+        if name.lower() in self.state.joined:
+            return
+        try:
+            self.reddit.subscribe(name)
+        except (NotLoggedIn, AccessBlocked):
+            raise
+        except RedditError as e:
+            log.warning("%s fehlgeschlagen: %s", label, e)
+            todo.append(label)
+            return
+        self.state.joined[name.lower()] = now
+        done.append(label)
+
     def _enter(self, gw: Giveaway, now: float) -> None:
-        text = requested_comment(gw.selftext) if self.cfg.use_requested_comment else None
-        text = text or self.rng.choice(self.cfg.comments)
+        # Frischen Stand holen: Ist es noch offen? Habe ich schon kommentiert? Welche Zahlen sind weg?
+        try:
+            post, comments = self.reddit.thread(gw.id)
+        except (NotLoggedIn, AccessBlocked):
+            raise
+        except (RedditError, LookupError, TypeError) as e:
+            log.warning("Giveaway %s nicht lesbar: %s", gw.id, e)
+            gw.retry_at = now + 600
+            return
+        me = self.username.lower()
+        mine = [c for c in comments if (c.get("author") or "").lower() == me]
+        if mine:
+            gw.entered, gw.entered_at = True, float(mine[-1].get("created_utc", now))
+            gw.comment_ids += [c["name"] for c in mine if c.get("name") and c["name"] not in gw.comment_ids]
+            return
+        req = analyze(post, now)
+        gw.ends_at = req.ends_at or gw.ends_at
+        if req.ended or host_announced_winner(post, comments) or not self._open(gw.created_utc, gw.ends_at, now):
+            gw.failed = "schon beendet"
+            log.info("⏹ Schon beendet, übersprungen: %s", gw.title)
+            return
+
+        done: list[str] = []
+        todo: list[str] = []
+        if self.cfg.join_communities:
+            for sub in [gw.subreddit, *req.join_subreddits]:
+                if sub:
+                    self._join(sub, f"r/{sub} beigetreten", now, done, todo)
+            for user in req.follow_users:
+                self._join(f"u_{user}", f"u/{user} gefolgt", now, done, todo)
+        todo = [t.replace("beigetreten", "beitreten").replace("gefolgt", "folgen") for t in todo]
+
+        if self.cfg.use_requested_comment:
+            taken = taken_numbers(comments, req.number_range) if req.number_range else set()
+            text = compose_comment(req, self.cfg, self.rng, taken)
+        else:
+            text = self.rng.choice(self.cfg.comments)
         try:
             name = self.reddit.post_comment("t3_" + gw.id, text)
         except RateLimited as e:
@@ -271,15 +383,22 @@ class GiveawayBot:
         gw.comment_text = text
         if name:
             gw.comment_ids.append(name)
-        log.info("✅ Teilgenommen: %s – „%s“", gw.title, text)
-        if self.cfg.notify_entries:
+        todo += req.todo_for_user(friends_tagged=bool(self.cfg.friends))
+        log.info("✅ Teilgenommen: %s – „%s“%s", gw.title, text, f" (+ {', '.join(done)})" if done else "")
+        if todo:
+            log.info("   👉 Noch von Hand: %s", ", ".join(todo))
+        if self.cfg.notify_entries or todo:
+            lines = [gw.title, f"Kommentar: „{text}“"]
+            if done:
+                lines.append("Erledigt: " + ", ".join(done))
+            if todo:
+                lines.append("👉 Noch von dir (1 Tipp): " + ", ".join(todo))
             self._signal(Signal(
                 key=f"entered:{gw.id}",
-                title="✅ Bei Giveaway teilgenommen",
-                message=(f"{gw.title}\nKommentar: „{text}“\n"
-                         "Tippe zum Öffnen – manche Giveaways wollen noch Extra-Schritte (z. B. Telegram)."),
+                title="✅ Teilgenommen – noch was zu tun" if todo else "✅ Bei Giveaway teilgenommen",
+                message="\n".join(lines),
                 url=gw.url,
-                priority=3,
+                priority=4 if todo else 3,
             ))
 
     # --- Gewinne erkennen -----------------------------------------------------
@@ -288,9 +407,12 @@ class GiveawayBot:
         self.sync_my_comments()
         self._check_inbox()
         now = self.clock()
-        for gw in list(self.state.giveaways.values()):
-            if not gw.entered or now - gw.created_utc > self.cfg.watch_days * DAY:
-                continue
+        due = sorted((g for g in self.state.giveaways.values() if self._watch_thread(g, now)),
+                     key=lambda g: g.next_check)
+        for gw in due[:THREADS_PER_CHECK]:
+            # Kurz nach dem Ende wird oft verkündet → dann häufiger nachsehen
+            fresh = now < self._deadline(gw) + 2 * DAY
+            gw.next_check = now + (self.cfg.win_check_seconds if fresh else 3600)
             try:
                 post, comments = self.reddit.thread(gw.id)
             except (NotLoggedIn, AccessBlocked):
@@ -300,6 +422,14 @@ class GiveawayBot:
                 continue
             for sig in thread_signals(post, comments, self.username, set(gw.comment_ids), self.cfg):
                 self._signal(sig)
+
+    def _watch_thread(self, gw: Giveaway, now: float) -> bool:
+        """Threads, in denen du mitmachst, bis eine Woche nach Ende auf Gewinner prüfen."""
+        if not gw.entered or gw.next_check > now:
+            return False
+        if now - gw.created_utc > self.cfg.watch_days * DAY:
+            return False
+        return now < self._deadline(gw) + 7 * DAY
 
     def _check_inbox(self) -> None:
         oldest = self.state.first_run - 2 * DAY

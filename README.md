@@ -1,6 +1,6 @@
 # Gig – Reddit-Giveaway-Bot 🎁⌚
 
-Gig läuft unsichtbar auf deinem Laptop. Er sucht in **r/RepWatchClud** nach Giveaways für Rep-Uhren und nimmt per Kommentar teil. Wenn du gewinnst, vibriert dein **Handy**.
+Gig läuft unsichtbar auf deinem Laptop. Er sucht in r/RepWatchClud und weiteren Rep-Uhren-Communities nach Giveaways, liest die Teilnahmebedingungen und nimmt teil. Wenn du gewinnst, vibriert dein **Handy**.
 
 ```
 Laptop: Gig (startet automatisch, aktualisiert sich selbst)  ──►  ntfy.sh  ──►  Handy: Gig-App
@@ -50,19 +50,52 @@ Das PowerShell-Fenster fragt zum Schluss, ob Gig auch bei **zugeklapptem** Lapto
 
 ## Was dann automatisch passiert
 
-| Wer | Was |
+**Giveaways finden**
+- Alle 60 Sekunden prüft der Bot r/RepWatchClud, r/RepCulture_Timepieces, r/RepWatch, r/RepTime, r/ChinaTime, r/repwatchbuysell, r/1688Time und r/RepTimeQC auf frische Giveaways.
+- Alle 5 Minuten durchsucht er ganz Reddit nach Uhren-Giveaways. Findet er dabei ein neues Uhren-Subreddit, nimmt er es von selbst in die Liste auf.
+- Einmal am Tag geht er tiefer (je Subreddit 400 Posts, Suche über einen Monat) und findet so auch ältere Giveaways, die noch laufen.
+- Er erkennt, ob ein Giveaway vorbei ist:
+  - Enddatum in der Beschreibung („ends in 48h“, „closes Oct 25“, „winner picked Sunday“)
+  - Flair „Ended“ oder „Closed“
+  - gesperrter Post
+  - der Host hat im Thread schon Gewinner verkündet
+- Was bald endet, kommt zuerst dran.
+
+**Die Beschreibung lesen und teilnehmen**
+
+| Verlangt das Giveaway … | macht der Bot |
 |---|---|
-| Laptop | Sucht alle 3 Minuten nach neuen Giveaways und kommentiert. Verlangt ein Post einen bestimmten Text (z. B. `comment "Sprite"`), wird genau der genommen. |
-| Laptop | Prüft alle 10 Minuten, ob du gewonnen hast. Erkannt wird: eine Antwort auf deinen Kommentar mit „congrats“ oder „you won“, ein Giveaway-Post, der mit deinem Namen bearbeitet wurde, eine Erwähnung in einem Gewinner-Post oder eine Nachricht in deiner Reddit-Inbox. |
-| Laptop | Verhindert den Ruhezustand, solange das Ladekabel steckt. Startet nach Absturz neu. Spielt neue Versionen von selbst ein. |
-| Laptop | Blockt Reddit den unsichtbaren Browser, wechselt Gig von selbst zu einem minimierten Browserfenster. |
-| Handy | 🏆 **Gewinn** – laut, mit Vibration. Tippen öffnet den Reddit-Post. |
-| Handy | ✅ Teilnahme · 📣 Gewinner verkündet · 🔑 Login nötig · ⚠️ Problem |
-| App | Zeigt „💻 Laptop-Bot aktiv“ oder eine Warnung, wenn der Laptop sich länger als 75 Minuten nicht gemeldet hat. |
+| `comment "Sprite"` | kommentiert genau „Sprite“ |
+| „pick a number 1–100“ | sucht sich eine Zahl, die noch niemand genommen hat |
+| „comment your dream watch“ / „why do you want to win“ | schreibt eine passende Antwort |
+| „join r/…“, „follow me / u/…“ | tritt der Community bei bzw. folgt dem Host (und tritt immer dem Subreddit des Giveaways bei) |
+| „tag 2 friends“ | markiert Freunde aus `friends = [...]` in der Config. Ohne Eintrag sagt er dir Bescheid. |
+| Upvote, Teilen, Telegram-, WhatsApp- oder Discord-Gruppe | macht er **nicht**, sondern schickt dir eine Benachrichtigung mit Liste und Link |
+
+Upvoten und Teilen sind absichtlich ausgelassen: Hosts sehen nicht, wer upvotet hat. Automatisches Abstimmen und Posten von Links erkennt Reddit aber schnell als Manipulation bzw. Spam und sperrt dafür Accounts.
+
+**Gewinne erkennen und melden**
+- Erkannt wird:
+  - eine Antwort auf deinen Kommentar mit „congrats“ oder „you won“
+  - dein Name im Giveaway-Post
+  - eine Erwähnung in einem Gewinner-Post
+  - eine Nachricht in deiner Reddit-Inbox
+- Frische Giveaways prüft er alle 10 Minuten, ältere stündlich, bis eine Woche nach dem Ende.
+- Aufs Handy kommen:
+  - 🏆 **Gewinn** – laut, mit Vibration. Tippen öffnet den Post.
+  - ✅ Teilnahme – mit „👉 noch zu tun“, falls du etwas selbst machen musst
+  - 📣 Gewinner verkündet · 🔑 Login nötig · ⚠️ Problem
+
+**Laptop**
+- Gig startet automatisch und startet sich nach Abstürzen neu.
+- Neue Versionen spielt er von selbst ein.
+- Solange das Ladekabel steckt, schläft der Laptop nicht ein.
+- Blockt Reddit den unsichtbaren Browser, wechselt Gig zu einem minimierten Fenster.
+- Die App zeigt „💻 Laptop-Bot aktiv“ oder warnt, wenn er sich länger nicht gemeldet hat.
 
 ## Gut zu wissen
 
-- **Risiko für deinen Account:** Automatisches Kommentieren verstößt gegen die Reddit-Regeln, im schlimmsten Fall wird der Account gesperrt. Gig hält sich deshalb zurück: ein Kommentar pro Giveaway, höchstens 20 am Tag, mindestens 90 Sekunden Abstand. Nur melden statt kommentieren: in `config.toml` `auto_comment = false` setzen.
+- **Risiko für deinen Account:** Automatisches Kommentieren verstößt gegen die Reddit-Regeln, im schlimmsten Fall wird der Account gesperrt. Gig hält sich deshalb zurück: ein Kommentar pro Giveaway, höchstens 30 am Tag, mindestens 60 Sekunden Abstand. Nur melden statt kommentieren: in `config.toml` `auto_comment = false` setzen.
 - **Warum nur auf dem Laptop:** Reddit sperrt Server in Rechenzentren komplett (getestet von GitHub aus: „Blocked“). Gig muss deshalb über dein Internet zu Hause laufen.
 - **Reddit-Chats** (das neue Nachrichtensystem) kann Gig nicht lesen. Die meisten Hosts verkünden die Gewinner aber öffentlich.
 - **Extra-Schritte** wie Telegram- oder WhatsApp-Gruppen machst du selbst; nach jeder Teilnahme kommt eine Benachrichtigung mit Link.

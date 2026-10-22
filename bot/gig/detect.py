@@ -16,6 +16,8 @@ _REQUESTED_COMMENT = re.compile(
     re.IGNORECASE,
 )
 _POST_ID_IN_URL = re.compile(r"/comments/([a-z0-9]+)")
+# Subreddit-Namen sind zusammengeschrieben (RepWatches, ChinaTime) → Teilwörter prüfen
+_WATCH_SUBREDDIT = re.compile(r"watch|rolex|uhr|horolog|rep.*time|time.*rep|chinatime|1688time", re.I)
 
 
 @dataclass
@@ -53,6 +55,14 @@ def is_giveaway(post: dict, cfg: Config) -> bool:
 def is_announcement(post: dict, cfg: Config) -> bool:
     """Gewinner-Bekanntgabe oder beendetes Giveaway."""
     return contains_any(post.get("title"), cfg.exclude_keywords) and _giveaway_words(post, cfg)
+
+
+def is_watch_related(post: dict, cfg: Config) -> bool:
+    """Für Treffer der Reddit-weiten Suche: Geht es überhaupt um Uhren?"""
+    if _WATCH_SUBREDDIT.search(post.get("subreddit") or ""):
+        return True
+    text = " ".join(str(post.get(k) or "") for k in ("title", "link_flair_text", "selftext")).lower()
+    return any(re.search(rf"(?<![a-z]){re.escape(kw)}(?:s|es|en)?(?![a-z])", text) for kw in cfg.watch_keywords)
 
 
 def requested_comment(selftext: str | None) -> str | None:

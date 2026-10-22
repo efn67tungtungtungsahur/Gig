@@ -18,16 +18,17 @@ def cfg(tmp_path):
 
 
 def make_post(pid="abc123", title="🎉🎁 Giveaway Time! Rolex GMT-Master II 126720 “Sprite” — VSF DD3285 V2",
-              flair="🎁GIVEAWAY🎁", author="ContributionAble4509", created=1_000_000.0, selftext="", **extra):
+              flair="🎁GIVEAWAY🎁", author="ContributionAble4509", created=1_000_000.0, selftext="",
+              subreddit="RepWatchClud", **extra):
     post = {
         "id": pid,
         "name": f"t3_{pid}",
         "title": title,
         "link_flair_text": flair,
         "author": author,
-        "subreddit": "RepWatchClud",
+        "subreddit": subreddit,
         "created_utc": created,
-        "permalink": f"/r/RepWatchClud/comments/{pid}/giveaway/",
+        "permalink": f"/r/{subreddit}/comments/{pid}/giveaway/",
         "selftext": selftext,
         "locked": False,
         "archived": False,

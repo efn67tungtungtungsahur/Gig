@@ -11,8 +11,8 @@ android {
         applicationId = "com.gig.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 
     // Fester Schlüssel im Repo, damit neue Versionen sich einfach über die alte installieren lassen.
@@ -43,4 +43,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+dependencies {
+    // QR-Scanner von Google Play-Diensten (braucht keine Kamera-Berechtigung)
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }

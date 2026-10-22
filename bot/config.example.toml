@@ -55,8 +55,8 @@ watch_days = 21
 # ntfy-Server, über den die Benachrichtigungen ans Handy gehen
 ntfy_server = "https://ntfy.sh"
 
-# Geheimer Kanalname – wird beim ersten Start automatisch erzeugt.
-# Genau diesen Namen trägst du in der Handy-App ein.
+# Geheimer Kanalname – wird beim ersten Start automatisch erzeugt und per QR-Code
+# an die Handy-App übertragen (python gig_bot.py pair zeigt den Code erneut).
 ntfy_topic = ""
 
 # Auch melden, wenn der Bot teilnimmt oder ein neues Giveaway findet
@@ -70,7 +70,8 @@ poll_seconds = 180
 # Wie oft auf Gewinne geprüft wird (Sekunden)
 win_check_seconds = 600
 
-# Browser unsichtbar im Hintergrund. Falls Reddit blockt: auf false stellen.
+# Browser unsichtbar im Hintergrund. Blockt Reddit das, wechselt der Bot von selbst
+# zu einem normalen (minimierten) Browserfenster.
 headless = true
 
 # "" = mitgelieferter Chromium (python -m playwright install chromium)

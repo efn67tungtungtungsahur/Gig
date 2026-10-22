@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import random
 import time
+from pathlib import Path
 
 from .config import Config
 from .detect import (
@@ -16,6 +17,7 @@ from .detect import (
     requested_comment,
     thread_signals,
 )
+from .pairing import STATUS_TAG
 from .reddit import (
     AccessBlocked,
     BrowserClosed,
@@ -30,11 +32,13 @@ log = logging.getLogger("gig")
 
 TICK_SECONDS = 15
 PROBLEM_REPEAT_SECONDS = 6 * 3600
+HEARTBEAT_SECONDS = 30 * 60
 
 
 class GiveawayBot:
     def __init__(self, cfg: Config, reddit, notifier, state: State, *, dry_run: bool = False,
-                 clock=time.time, rng: random.Random | None = None):
+                 clock=time.time, rng: random.Random | None = None, escalate_login: bool = False,
+                 escalate_blocked: bool = False, stop_file: Path | None = None):
         self.cfg = cfg
         self.reddit = reddit
         self.notifier = notifier
@@ -45,6 +49,11 @@ class GiveawayBot:
         self._next_scan = 0.0
         self._next_win_check = 0.0
         self._has_problem = False
+        # Bestimmte Probleme an den Aufrufer weitergeben, der sie besser lösen kann
+        # (Login-Fenster öffnen bzw. auf sichtbaren Browser wechseln).
+        self.escalate_login = escalate_login
+        self.escalate_blocked = escalate_blocked
+        self.stop_file = stop_file
 
     @property
     def username(self) -> str:
@@ -57,9 +66,15 @@ class GiveawayBot:
     def run_forever(self, sleep=time.sleep) -> None:
         mode = "nimmt automatisch teil" if self.auto_enter else "meldet nur (du kommentierst selbst)"
         log.info("Bot läuft als u/%s und %s. Beenden mit Strg+C.", self.username, mode)
-        while True:
+        if not self.state.welcomed:
+            what = "nimmt automatisch an Giveaways teil" if self.auto_enter else "meldet dir neue Giveaways"
+            if self.notifier.send("🤖 Gig läuft", f"Der Bot auf deinem Laptop {what} (u/{self.username}).",
+                                  priority=3):
+                self.state.welcomed = True
+        while not (self.stop_file and self.stop_file.exists()):
             self.tick()
             sleep(TICK_SECONDS)
+        log.info("Stopp-Signal erhalten – Bot wird beendet.")
 
     def tick(self) -> None:
         now = self.clock()
@@ -79,9 +94,13 @@ class GiveawayBot:
         except BrowserClosed:
             raise
         except NotLoggedIn:
+            if self.escalate_login:
+                raise
             self._problem("login", "⚠️ Bot ist bei Reddit ausgeloggt",
                           "Starte am Laptop: python gig_bot.py login – danach den Bot neu starten.")
         except AccessBlocked as e:
+            if self.escalate_blocked:
+                raise
             self._problem("blocked", "⚠️ Reddit blockiert den Bot", str(e))
         except RedditError as e:
             log.warning("Reddit-Fehler: %s", e)
@@ -89,8 +108,19 @@ class GiveawayBot:
             log.exception("Unerwarteter Fehler – Bot läuft weiter")
         finally:
             self.flush_outbox()
+            self._heartbeat(now)
             self.state.prune(now, self.cfg.watch_days)
             self.state.save()
+
+    def _heartbeat(self, now: float) -> None:
+        """Lebenszeichen für die App („Laptop-Bot aktiv“), erscheint nicht als Benachrichtigung."""
+        if now - self.state.last_heartbeat < HEARTBEAT_SECONDS:
+            return
+        entered = sum(1 for g in self.state.giveaways.values() if g.entered)
+        status = "hat ein Problem" if self._has_problem else "läuft"
+        if self.notifier.send("Gig-Status", f"u/{self.username} · {status} · {entered} Teilnahmen",
+                              priority=1, tags=(STATUS_TAG,)):
+            self.state.last_heartbeat = now
 
     # --- Giveaways finden -----------------------------------------------------
 

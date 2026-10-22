@@ -1,0 +1,148 @@
+name: Gig bauen, testen, veröffentlichen
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - "bot/**"
+      - "install/**"
+      - ".github/workflows/release.yml"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Dateien zusammenstellen
+        run: |
+          mkdir dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/gig.apk
+          (cd bot && zip -qr ../dist/gig-bot.zip . -x "data/*" "config.toml" "*__pycache__*" ".venv/*" ".pytest_cache/*")
+          cp install/install.ps1 install/install.sh dist/
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      # Erst nach „staging“, damit die Tests genau die Download-Wege der Nutzer prüfen.
+      - name: Zum Testen bereitstellen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: staging
+          name: "Staging – automatischer Test, bitte nicht benutzen"
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: dist/*
+
+  test-windows:
+    needs: build
+    runs-on: windows-latest
+    env:
+      GIG_CI: "1"
+      GIG_BASE_URL: https://github.com/${{ github.repository }}/releases/download/staging
+      GIG_NTFY_TOPIC: gig-ci-${{ github.run_id }}-${{ github.run_attempt }}-win
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installation genau wie beim Nutzer (Windows PowerShell)
+        shell: powershell
+        run: irm "$env:GIG_BASE_URL/install.ps1" | iex
+
+      - name: Tests mit dem installierten Python
+        shell: powershell
+        run: |
+          $py = "$env:LOCALAPPDATA\Gig\venv\Scripts\python.exe"
+          & $py -m pip install -q pytest
+          $env:GIG_TEST_BROWSER = "bundled"
+          & $py -m pytest -q "$env:LOCALAPPDATA\Gig\app\tests"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Hintergrundstart wie per Autostart (Launcher → Bot → Reddit → Handy)
+        shell: powershell
+        run: |
+          $app = "$env:LOCALAPPDATA\Gig\app"
+          $py = "$env:LOCALAPPDATA\Gig\venv\Scripts\python.exe"
+          Start-Process "$env:LOCALAPPDATA\Gig\venv\Scripts\pythonw.exe" -ArgumentList ('"' + "$app\launcher.py" + '"') -WorkingDirectory $app
+          # GitHub-Server werden von Reddit gesperrt – erwartet wird deshalb die Meldung
+          # „Reddit blockiert“ bzw. „Login nötig“. Das beweist die ganze Kette bis zum Handy.
+          & $py .github/scripts/wait_ntfy.py $env:GIG_NTFY_TOPIC "Reddit|Gig läuft" 300
+          $code = $LASTEXITCODE
+          Get-ChildItem "$app\data" | Format-Table Name, Length
+          foreach ($f in "launcher.log", "bot.log", "bot-errors.log") {
+            Write-Host "----- $f -----"
+            Get-Content "$app\data\$f" -ErrorAction SilentlyContinue
+          }
+          exit $code
+
+  test-macos:
+    needs: build
+    runs-on: macos-latest
+    env:
+      GIG_CI: "1"
+      GIG_BASE_URL: https://github.com/${{ github.repository }}/releases/download/staging
+      GIG_NTFY_TOPIC: gig-ci-${{ github.run_id }}-${{ github.run_attempt }}-mac
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installation genau wie beim Nutzer
+        run: curl -fsSL "$GIG_BASE_URL/install.sh" | bash
+
+      - name: Tests mit dem installierten Python
+        run: |
+          ~/.gig/venv/bin/python -m pip install -q pytest
+          GIG_TEST_BROWSER=bundled ~/.gig/venv/bin/python -m pytest -q ~/.gig/app/tests
+
+      - name: Hintergrundstart (Launcher → Bot → Reddit → Handy)
+        run: |
+          cd ~/.gig/app
+          nohup ~/.gig/venv/bin/python launcher.py >/dev/null 2>&1 &
+          cd "$GITHUB_WORKSPACE"
+          code=0
+          ~/.gig/venv/bin/python .github/scripts/wait_ntfy.py "$GIG_NTFY_TOPIC" "Reddit|Gig läuft" 300 || code=$?
+          for f in launcher.log bot.log bot-errors.log; do echo "----- $f -----"; cat ~/.gig/app/data/$f 2>/dev/null || true; done
+          exit $code
+
+  publish:
+    needs: [build, test-windows, test-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Für alle veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-latest
+          name: "Gig – neueste Version"
+          target_commitish: ${{ github.sha }}
+          prerelease: false
+          make_latest: true
+          body_path: install/RELEASE.md
+          files: dist/*

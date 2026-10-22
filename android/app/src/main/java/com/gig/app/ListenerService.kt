@@ -72,7 +72,8 @@ class ListenerService : Service() {
                 return
             }
             try {
-                val since = URLEncoder.encode(Store.lastId(this) ?: "12h", "UTF-8")
+                val last = Store.lastTime(this)
+                val since = if (last > 0) last.toString() else "12h"
                 val url = URL("${Store.server(this).trimEnd('/')}/${URLEncoder.encode(topic, "UTF-8")}/json?since=$since")
                 val conn = (url.openConnection() as HttpURLConnection).apply {
                     connectTimeout = 15_000
@@ -81,7 +82,7 @@ class ListenerService : Service() {
                 }
                 connection = conn
                 if (conn.responseCode != 200) throw IOException("HTTP ${conn.responseCode}")
-                updateStatus("Verbunden ✓ seit ${clock()}")
+                updateStatus("Verbunden ✓ seit ${clock(System.currentTimeMillis() / 1000)}")
                 backoff = 2_000L
                 BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8)).use { reader ->
                     while (running) {
@@ -114,8 +115,15 @@ class ListenerService : Service() {
         }
         if (json.optString("event") != "message") return
         val msg = GigMessage.fromJson(json) ?: return
-        Store.setLastId(this, msg.id)
-        if (Store.addToHistory(this, msg)) AppNotifications.show(this, msg)
+        Store.setLastTime(this, msg.time)
+        when {
+            GigMessage.STATUS_TAG in msg.tags -> {
+                Store.setBotStatus(this, msg.time, msg.message)
+                updateStatus("Verbunden ✓ · Laptop-Bot zuletzt ${clock(msg.time)}")
+            }
+            GigMessage.PAIRED_TAG in msg.tags -> Unit
+            Store.addToHistory(this, msg) -> AppNotifications.show(this, msg)
+        }
     }
 
     private fun updateStatus(status: String) {
@@ -123,7 +131,8 @@ class ListenerService : Service() {
         AppNotifications.updateService(this, status)
     }
 
-    private fun clock(): String = SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date())
+    private fun clock(seconds: Long): String =
+        SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(seconds * 1000))
 
     companion object {
         fun start(ctx: Context) {

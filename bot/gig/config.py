@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import shutil
@@ -111,6 +112,11 @@ def load_config(path: Path = DEFAULT_PATH) -> Config:
             raise ConfigError('Trage in config.toml unter [notify] eine Zeile ntfy_topic = "..." ein.')
         path.write_text(text, encoding="utf-8")
         raw = tomllib.loads(text)
+
+    # Überschreibungen per Umgebungsvariable (z. B. damit Tests nicht aufs echte Handy senden)
+    notify = raw.setdefault("notify", {})
+    notify["ntfy_topic"] = os.environ.get("GIG_NTFY_TOPIC") or notify.get("ntfy_topic", "")
+    notify["ntfy_server"] = os.environ.get("GIG_NTFY_SERVER") or notify.get("ntfy_server", "https://ntfy.sh")
 
     data_dir = path.resolve().parent / "data"
     data_dir.mkdir(exist_ok=True)

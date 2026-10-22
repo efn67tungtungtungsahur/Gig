@@ -230,13 +230,15 @@ class RedditSession:
 
 
 @contextmanager
-def open_browser(cfg: Config, headless: bool | None = None):
+def open_browser(cfg: Config, headless: bool | None = None, minimized: bool = False):
     """Startet den Browser mit eigenem, dauerhaftem Profil (Login bleibt gespeichert)."""
     from playwright.sync_api import sync_playwright
 
     profile = cfg.data_dir / "browser-profile"
     profile.mkdir(parents=True, exist_ok=True)
     kwargs: dict = {"headless": cfg.headless if headless is None else headless}
+    if minimized and not kwargs["headless"]:
+        kwargs["args"] = ["--start-minimized"]
     if cfg.browser_executable:
         kwargs["executable_path"] = cfg.browser_executable
     elif cfg.browser_channel:
@@ -269,23 +271,33 @@ def _logged_in_name(ctx, base_url: str) -> str | None:
     return d.get("name")
 
 
-def interactive_login(cfg: Config, timeout: int = 900) -> str:
-    """Öffnet ein sichtbares Browserfenster, in dem du dich bei Reddit einloggst."""
-    with open_browser(cfg, headless=False) as (ctx, page):
+def login_in_window(ctx, page, cfg: Config, timeout: float = 900) -> str:
+    """Zeigt die Reddit-Anmeldung im sichtbaren Fenster und wartet, bis du eingeloggt bist."""
+    name = _logged_in_name(ctx, cfg.reddit_url)
+    if name:
+        print(f"✅ Schon eingeloggt als u/{name}")
+        return name
+    try:
+        page.goto(LOGIN_URL)
+    except PlaywrightError as e:  # z. B. kurz kein Internet – Seite lässt sich im Fenster neu laden
+        if "closed" in str(e).lower():
+            raise BrowserClosed(str(e)) from e
+        log.warning("Login-Seite nicht geladen (%s) – bitte im Fenster neu laden", str(e).splitlines()[0])
+    page.bring_to_front()
+    print("\n👉 Im Browserfenster bei Reddit einloggen (Google- oder Apple-Login geht auch).")
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(3)
+        if page.is_closed():
+            raise BrowserClosed("Login-Fenster wurde geschlossen")
         name = _logged_in_name(ctx, cfg.reddit_url)
         if name:
-            print(f"✅ Schon eingeloggt als u/{name}")
+            print(f"✅ Eingeloggt als u/{name}")
             return name
-        page.goto(LOGIN_URL)
-        print("\n👉 Im geöffneten Browserfenster bei Reddit einloggen (auch Google/Apple-Login geht).")
-        print("   Das Fenster schließt sich danach automatisch.\n")
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            time.sleep(3)
-            if page.is_closed():
-                raise BrowserClosed("Login-Fenster wurde geschlossen")
-            name = _logged_in_name(ctx, cfg.reddit_url)
-            if name:
-                print(f"✅ Eingeloggt als u/{name}")
-                return name
-        raise NotLoggedIn("Login nicht innerhalb von 15 Minuten abgeschlossen")
+    raise NotLoggedIn("Login wurde nicht abgeschlossen")
+
+
+def interactive_login(cfg: Config, timeout: float = 900) -> str:
+    """Öffnet ein sichtbares Browserfenster, in dem du dich bei Reddit einloggst."""
+    with open_browser(cfg, headless=False) as (ctx, page):
+        return login_in_window(ctx, page, cfg, timeout)

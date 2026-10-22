@@ -61,6 +61,9 @@ class State:
         self.outbox: list[dict] = []
         self.comment_times: list[float] = []
         self.problems: dict[str, float] = {}
+        self.welcomed = False
+        self.last_heartbeat = 0.0
+        self.force_visible_browser = False
 
     @classmethod
     def load(cls, path: Path) -> "State":
@@ -79,6 +82,9 @@ class State:
         state.outbox = raw.get("outbox", [])
         state.comment_times = raw.get("comment_times", [])
         state.problems = raw.get("problems", {})
+        state.welcomed = raw.get("welcomed", False)
+        state.last_heartbeat = raw.get("last_heartbeat", 0.0)
+        state.force_visible_browser = raw.get("force_visible_browser", False)
         return state
 
     def save(self) -> None:
@@ -90,6 +96,9 @@ class State:
             "outbox": self.outbox,
             "comment_times": self.comment_times,
             "problems": self.problems,
+            "welcomed": self.welcomed,
+            "last_heartbeat": self.last_heartbeat,
+            "force_visible_browser": self.force_visible_browser,
         }
         tmp = self.path.with_suffix(".tmp")
         tmp.write_text(json.dumps(raw, ensure_ascii=False, indent=1), encoding="utf-8")

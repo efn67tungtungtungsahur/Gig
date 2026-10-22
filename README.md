@@ -1,115 +1,102 @@
 # Gig – Reddit-Giveaway-Bot 🎁⌚
 
-Gig läuft auf deinem Laptop und sucht in **r/RepWatchClud** (und weiteren Subreddits, die du einträgst) nach Giveaways für Rep-Uhren. Wenn er eins findet, kommentiert er und nimmt so teil. Danach prüft er regelmäßig, ob du gewonnen hast. Wenn ja, bekommst du eine **Push-Benachrichtigung aufs Handy**, über die eigene Android-App (APK).
+Gig läuft unsichtbar auf deinem Laptop. Er sucht in **r/RepWatchClud** nach Giveaways für Rep-Uhren und nimmt per Kommentar teil. Wenn du gewinnst, vibriert dein **Handy**.
 
 ```
-Laptop: Gig-Bot (Python + Browser)  ──►  ntfy.sh  ──►  Handy: Gig-App (APK)
+Laptop: Gig (startet automatisch, aktualisiert sich selbst)  ──►  ntfy.sh  ──►  Handy: Gig-App
 ```
 
-## ⚠️ Vorher wissen
+## Einrichten – das musst du selbst machen (einmalig, ca. 6 Minuten)
 
-- **Kein Reddit-API-Schlüssel nötig, aber auch nicht möglich:** Reddit hat seine offizielle API für neue Entwickler dichtgemacht. Neue Anträge gehen nur noch bis 31.10.2026, RSS-Feeds enden am 13.11.2026, und die öffentliche API wird im März 2027 ganz abgeschaltet. Der Bot benutzt deshalb deinen normalen Reddit-Login in einem eigenen Browser-Profil und ruft dieselben Adressen auf wie die Reddit-Webseite.
-- **Risiko für deinen Account:** Automatisches Kommentieren verstößt gegen die Nutzungsbedingungen von Reddit, und manche Subreddits verbieten Bots. Reddit kann deinen Account deswegen einschränken oder sperren. Deshalb ist der Bot bewusst zurückhaltend:
-  - pro Giveaway nur **ein** Kommentar
-  - höchstens 20 Kommentare am Tag
-  - mindestens 90 Sekunden Abstand zwischen zwei Kommentaren
+Alles andere läuft automatisch. Diese Schritte gehen nicht ohne dich: Software auf deinem Laptop installieren, dich bei Reddit anmelden und eine App auf deinem Handy installieren.
 
-  Wenn du das Risiko nicht willst, stell `auto_comment = false` ein. Dann meldet dir der Bot neue Giveaways nur, und du kommentierst selbst mit einem Tipp auf die Benachrichtigung.
-- **Extra-Schritte:** Der Bot kann nur kommentieren. Verlangt ein Giveaway mehr (Upvote, WhatsApp- oder Telegram-Gruppe), bekommst du eine Benachrichtigung mit Link und erledigst den Rest selbst.
-- **Vorsicht bei „Gewinnen“, die Geld kosten:** Bei Rep-Giveaways sollen angebliche Gewinner manchmal Versand oder Zoll vorab bezahlen. Ein echtes Giveaway kostet dich nichts.
-- **Der Laptop muss an sein** (kein Standby), sonst arbeitet der Bot nicht.
+### Schritt 1 – Laptop
 
-## 1. Laptop einrichten (Windows)
+**Windows**
+1. Die **Windows-Taste** drücken, `PowerShell` tippen und **Enter** drücken.
+2. Diese Zeile kopieren, ins blaue Fenster einfügen (**Rechtsklick**) und **Enter** drücken:
+   ```
+   irm https://github.com/efn67tungtungtungsahur/Gig/releases/download/app-latest/install.ps1 | iex
+   ```
+3. Ein paar Minuten warten, bis sich ein **Browserfenster** öffnet.
 
-1. **Python 3.11 oder neuer** installieren: <https://www.python.org/downloads/>. Beim Installieren den Haken bei **„Add python.exe to PATH“** setzen.
-2. Dieses Repository herunterladen (grüner Button **Code → Download ZIP**) und entpacken.
-3. Im Ordner `bot` doppelt auf **`start_windows.bat`** klicken.
-   - Beim ersten Start wird alles installiert. Das dauert ein paar Minuten.
-   - Ein Browserfenster öffnet sich. Logg dich dort bei Reddit ein (Google- oder Apple-Login geht auch). Danach schließt sich das Fenster, und der Bot arbeitet unsichtbar weiter.
-   - Im schwarzen Fenster steht dein **Kanal**, z. B. `gig-k3m9x2qa7b`. Den brauchst du gleich fürs Handy.
-4. Das Fenster offen lassen. Beenden kannst du den Bot mit `Strg+C`.
+**Mac**
+1. **Cmd + Leertaste** drücken, `Terminal` tippen und **Enter** drücken.
+2. Diese Zeile einfügen und **Enter** drücken:
+   ```
+   curl -fsSL https://github.com/efn67tungtungtungsahur/Gig/releases/download/app-latest/install.sh | bash
+   ```
 
-Auf Mac oder Linux startest du den Bot so: `cd bot && ./start.sh`
+### Schritt 2 – Bei Reddit einloggen
 
-## 2. Handy einrichten (Android)
+Im Browserfenster, das sich geöffnet hat, bei Reddit einloggen. Google- oder Apple-Login geht auch.
 
-1. Auf dem Handy die App herunterladen: **<https://github.com/efn67tungtungtungsahur/Gig/releases/tag/app-latest>**, Datei `gig.apk`.
-2. Datei öffnen und installieren. Android fragt eventuell, ob dein Browser Apps installieren darf; das musst du erlauben.
-3. App öffnen, Benachrichtigungen erlauben, den **Kanal** vom Laptop eintragen und auf **„Speichern & verbinden“** tippen.
-4. **„Akku-Optimierung ausschalten“** antippen. Sonst kann Android die Verbindung im Hintergrund trennen.
-5. Auf **„Test senden“** tippen. Nach ein paar Sekunden sollte eine Benachrichtigung kommen.
+Danach zeigt das Fenster **zwei QR-Codes**. Lass es offen.
 
-Auch vom Laptop aus kannst du eine Test-Nachricht schicken: `start_windows.bat test`
+### Schritt 3 – Handy (Android)
 
-> Alternative: Die offizielle **ntfy**-App (Play Store / F-Droid) funktioniert genauso. Dort einfach denselben Kanal abonnieren.
+1. Den **linken QR-Code** mit der Handy-Kamera scannen und `gig.apk` herunterladen.
+2. Die Datei öffnen und installieren. Fragt Android, ob dein Browser Apps installieren darf: **Zulassen**.
+3. Die **Gig-App** öffnen und zweimal **Zulassen** tippen (Benachrichtigungen und Akku).
+4. In der App auf **„📷 Mit Laptop koppeln“** tippen und den **rechten QR-Code** scannen.
 
-## Was aufs Handy kommt
+Danach steht im Laptop-Fenster **„✅ Handy verbunden“**, und auf dem Handy kommt **„✅ Gig ist verbunden“**.
 
-| Benachrichtigung | Wann |
+### Schritt 4 (nur Windows) – eine Frage beantworten
+
+Das PowerShell-Fenster fragt zum Schluss, ob Gig auch bei **zugeklapptem** Laptop weiterlaufen soll, solange das Ladekabel steckt. **Enter** heißt Ja.
+
+**Fertig.** Ab jetzt startet Gig automatisch mit dem Laptop, hält sich selbst aktuell und startet sich nach Fehlern neu. In der App siehst du jederzeit, ob der Laptop-Bot läuft.
+
+## Was dann automatisch passiert
+
+| Wer | Was |
 |---|---|
-| 🏆 **Möglicher Gewinn!** / **Du wurdest erwähnt** | Mögliche Auslöser: Jemand antwortet auf deinen Giveaway-Kommentar mit „congrats“ oder „you won“. Der Giveaway-Post wird mit deinem Namen bearbeitet. Du wirst in einem Gewinner-Post erwähnt. Du bekommst eine Gewinn-Nachricht. |
-| 📣 **Gewinner wurden verkündet** | Ein Host, bei dessen Giveaway du mitmachst, postet die Gewinner. Die stehen oft auf einem Bild, also selbst nachschauen. |
-| ✅ **Bei Giveaway teilgenommen** | Der Bot hat kommentiert. |
-| 🎁 **Neues Giveaway** | Nur bei `auto_comment = false`: Du sollst selbst kommentieren. |
-| ⚠️ **Problem** | Der Bot ist ausgeloggt oder wird von Reddit blockiert. |
+| Laptop | Sucht alle 3 Minuten nach neuen Giveaways und kommentiert. Verlangt ein Post einen bestimmten Text (z. B. `comment "Sprite"`), wird genau der genommen. |
+| Laptop | Prüft alle 10 Minuten, ob du gewonnen hast. Erkannt wird: eine Antwort auf deinen Kommentar mit „congrats“ oder „you won“, ein Giveaway-Post, der mit deinem Namen bearbeitet wurde, eine Erwähnung in einem Gewinner-Post oder eine Nachricht in deiner Reddit-Inbox. |
+| Laptop | Verhindert den Ruhezustand, solange das Ladekabel steckt. Startet nach Absturz neu. Spielt neue Versionen von selbst ein. |
+| Laptop | Blockt Reddit den unsichtbaren Browser, wechselt Gig von selbst zu einem minimierten Browserfenster. |
+| Handy | 🏆 **Gewinn** – laut, mit Vibration. Tippen öffnet den Reddit-Post. |
+| Handy | ✅ Teilnahme · 📣 Gewinner verkündet · 🔑 Login nötig · ⚠️ Problem |
+| App | Zeigt „💻 Laptop-Bot aktiv“ oder eine Warnung, wenn der Laptop sich länger als 75 Minuten nicht gemeldet hat. |
 
-Gewinn-Meldungen kommen mit hoher Priorität (laut, mit Vibration). Tippst du darauf, öffnet sich der Reddit-Post.
+## Gut zu wissen
 
-Reddit-**Chats** (das neue Nachrichtensystem) kann der Bot nicht lesen. Die meisten Hosts verkünden die Gewinner aber öffentlich oder antworten direkt auf deinen Kommentar. Chat-Nachrichten zeigt dir außerdem die Reddit-App selbst an.
+- **Risiko für deinen Account:** Automatisches Kommentieren verstößt gegen die Reddit-Regeln, im schlimmsten Fall wird der Account gesperrt. Gig hält sich deshalb zurück: ein Kommentar pro Giveaway, höchstens 20 am Tag, mindestens 90 Sekunden Abstand. Nur melden statt kommentieren: in `config.toml` `auto_comment = false` setzen.
+- **Warum nur auf dem Laptop:** Reddit sperrt Server in Rechenzentren komplett (getestet von GitHub aus: „Blocked“). Gig muss deshalb über dein Internet zu Hause laufen.
+- **Reddit-Chats** (das neue Nachrichtensystem) kann Gig nicht lesen. Die meisten Hosts verkünden die Gewinner aber öffentlich.
+- **Extra-Schritte** wie Telegram- oder WhatsApp-Gruppen machst du selbst; nach jeder Teilnahme kommt eine Benachrichtigung mit Link.
+- **Vorsicht:** Sollst du als „Gewinner“ Versand oder Zoll vorab bezahlen, ist das oft Betrug.
+- **Samsung, Xiaomi und ähnliche Handys:** Bleiben die Benachrichtigungen aus, in den Android-Einstellungen bei der Gig-App den Akku auf **„Nicht eingeschränkt“** stellen.
 
-## Einstellungen
+## Wenn mal was ist
 
-Die Einstellungen stehen in `bot/config.toml`. Die Datei wird beim ersten Start angelegt und ist kommentiert. Die wichtigsten Einträge:
+Unter Windows findest du im **Startmenü → Gig**:
 
-| Einstellung | Bedeutung |
+| Verknüpfung | Wofür |
 |---|---|
-| `subreddits` | In welchen Subreddits gesucht wird, z. B. `["RepWatchClud", "AnderesSub"]` |
-| `search_queries` | Optional: Reddit-weite Suche, z. B. `["rep watch giveaway"]` |
-| `auto_comment` | `true` = automatisch teilnehmen, `false` = nur melden |
-| `comments` | Kommentare, aus denen zufällig einer gewählt wird. Verlangt ein Post einen bestimmten Text (z. B. `comment "Sprite"`), wird genau der genommen. |
-| `notify_entries` | `false` = nur Gewinne und Probleme melden |
-| `headless` | `false` = Browserfenster sichtbar lassen (hilft, wenn Reddit blockt) |
-| `browser_channel` | `"msedge"` = vorinstallierten Edge benutzen statt eigenem Chromium |
+| Gig – Handy koppeln | QR-Code erneut anzeigen, z. B. für ein neues Handy |
+| Gig – Neu bei Reddit einloggen | Reddit-Login wiederholen (die App meldet dir, wenn das nötig ist) |
+| Gig – Protokoll ansehen | Nachlesen, was der Bot gemacht hat |
+| Gig deinstallieren | Gig wieder entfernen |
 
-Nach einer Änderung den Bot neu starten.
+Auf dem Mac geht das im Terminal mit `~/.gig/venv/bin/python ~/.gig/app/gig_bot.py pair` bzw. `login`.
 
-## Befehle
+Die Einstellungen stehen in `%LOCALAPPDATA%\Gig\app\config.toml` (Mac: `~/.gig/app/config.toml`), z. B. weitere Subreddits oder eigene Kommentartexte. Ändern musst du dort nichts.
 
-Unter Windows startest du alles über `start_windows.bat <befehl>`, auf Mac/Linux über `./start.sh <befehl>`:
-
-| Befehl | Was er macht |
-|---|---|
-| *(nichts)* | Bot starten |
-| `login` | Neu bei Reddit einloggen |
-| `check` | Testen, ob Reddit-Zugriff und Benachrichtigungen funktionieren; zeigt gefundene Giveaways |
-| `test` | Nur eine Test-Benachrichtigung schicken |
-| `status` | Liste aller gefundenen Giveaways mit Teilnahme-Status |
-| `--dry-run` | Bot laufen lassen, ohne zu kommentieren |
-
-## Probleme?
-
-- **„Reddit blockiert den Bot“** oder **„Webseite statt Daten“**: In `config.toml` `headless = false` setzen und neu starten. Das Browserfenster bleibt dann sichtbar; minimieren ist okay, schließen nicht.
-- **Ausgeloggt:** `start_windows.bat login`
-- **Keine Benachrichtigungen:**
-  - Steht in der App derselbe Kanal wie im Bot-Fenster?
-  - Ist die Akku-Optimierung ausgeschaltet?
-  - Mit `start_windows.bat test` testen.
-- **Der Bot kommentiert nicht:**
-  - Mit `start_windows.bat status` nachsehen, was er gefunden hat.
-  - Das Protokoll steht in `bot/data/bot.log`.
-  - Hinweis: Reddit bremst neue oder Accounts mit wenig Karma beim Kommentieren. Der Bot wartet dann und versucht es später noch einmal.
-
-## Aufbau
+## Für Entwickler
 
 ```
-bot/                Python-Bot (läuft auf dem Laptop)
-  gig/reddit.py     Reddit-Zugriff über eingeloggten Browser (Playwright)
-  gig/detect.py     Erkennt Giveaways, geforderte Kommentare, Gewinn-Hinweise
-  gig/bot.py        Ablauf: suchen → teilnehmen → Gewinne prüfen → melden
-  gig/notify.py     Push über ntfy
-  tests/            Tests (python -m pytest tests)
-android/            Android-App (Kotlin), empfängt die Meldungen
-.github/workflows/  baut die APK automatisch und stellt sie unter „Releases“ bereit
+bot/                  Python-Bot
+  gig/reddit.py       Reddit-Zugriff über eingeloggten Browser (Playwright)
+  gig/detect.py       Erkennt Giveaways, geforderte Kommentare, Gewinn-Hinweise
+  gig/bot.py          Ablauf: suchen → teilnehmen → Gewinne prüfen → melden
+  gig/pairing.py      QR-Code-Kopplung mit der App
+  launcher.py         Hintergrundbetrieb: Autostart, Neustart, Selbst-Update, wach halten
+  tests/              python -m pytest tests
+android/              Android-App (Kotlin)
+install/              Installationsskripte für Windows und Mac
+.github/workflows/    Bauen → Installation auf echtem Windows und Mac testen → Release
 ```
 
-Die App wird bei jeder Änderung im Ordner `android/` von GitHub automatisch neu gebaut. Die neueste `gig.apk` liegt dann wieder unter dem Release-Link oben.
+Jede Änderung wird automatisch gebaut und auf Windows und macOS über genau die Installationsbefehle oben getestet. Erst danach landet sie unter [Releases](https://github.com/efn67tungtungtungsahur/Gig/releases/tag/app-latest), und die installierten Bots spielen sie dann von selbst ein.

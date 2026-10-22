@@ -44,12 +44,16 @@ class FakeReddit:
 class FakeNotifier:
     def __init__(self):
         self.sent = []
+        self.status = []
         self.online = True
 
     def send(self, title, message, priority=3, click=None, tags=()):
         if not self.online:
             return False
-        self.sent.append({"title": title, "message": message, "priority": priority, "click": click})
+        if "gig_status" in tags:
+            self.status.append(message)
+        else:
+            self.sent.append({"title": title, "message": message, "priority": priority, "click": click})
         return True
 
 
@@ -237,3 +241,49 @@ def test_logout_is_reported_once_and_bot_keeps_running(cfg, tmp_path):
     clock.t += 7 * 3600  # besteht das Problem weiter, kommt nach 6 h eine Erinnerung
     bot.tick()
     assert len(bot.notifier.sent) == 2
+
+
+def test_heartbeat_every_30_minutes(cfg, tmp_path):
+    reddit = FakeReddit([])
+    bot, clock = make_bot(cfg, tmp_path, reddit)
+    bot.tick()
+    clock.t += 600
+    bot.tick()
+    assert bot.notifier.status == ["u/ferdi_123 · läuft · 0 Teilnahmen"]
+    clock.t += 1300
+    bot.tick()
+    assert len(bot.notifier.status) == 2
+
+
+def test_welcome_once_and_stop_file(cfg, tmp_path):
+    reddit = FakeReddit([])
+    stop = tmp_path / "stop"
+    bot, clock = make_bot(cfg, tmp_path, reddit, stop_file=stop)
+    ticks = []
+
+    def fake_sleep(seconds):
+        ticks.append(seconds)
+        if len(ticks) == 2:
+            stop.touch()
+
+    bot.run_forever(sleep=fake_sleep)
+    assert len(ticks) == 2
+    assert [m["title"] for m in bot.notifier.sent] == ["🤖 Gig läuft"]
+    stop.unlink()
+    bot.run_forever(sleep=lambda s: stop.touch())
+    assert [m["title"] for m in bot.notifier.sent] == ["🤖 Gig läuft"]
+
+
+def test_escalation_to_caller(cfg, tmp_path):
+    import pytest
+    from gig.reddit import AccessBlocked
+
+    reddit = FakeReddit([])
+    reddit.new_posts = lambda sub: (_ for _ in ()).throw(AccessBlocked("403"))
+    bot, _ = make_bot(cfg, tmp_path, reddit, escalate_blocked=True)
+    with pytest.raises(AccessBlocked):
+        bot.tick()
+    reddit.new_posts = lambda sub: (_ for _ in ()).throw(NotLoggedIn("weg"))
+    bot, _ = make_bot(cfg, tmp_path, reddit, escalate_login=True)
+    with pytest.raises(NotLoggedIn):
+        bot.tick()

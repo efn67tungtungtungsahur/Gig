@@ -9,7 +9,10 @@ object Store {
     const val KEY_SERVER = "server"
     const val KEY_TOPIC = "topic"
     const val KEY_ENABLED = "enabled"
-    const val KEY_LAST_ID = "last_id"
+    const val KEY_LAST_TIME = "last_time"
+    const val KEY_ONBOARDED = "onboarded"
+    const val KEY_BOT_SEEN = "bot_seen"
+    const val KEY_BOT_TEXT = "bot_text"
     const val KEY_STATUS = "status"
     const val KEY_HISTORY = "history"
     const val DEFAULT_SERVER = "https://ntfy.sh"
@@ -25,9 +28,19 @@ object Store {
 
     fun isEnabled(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_ENABLED, false)
 
-    fun lastId(ctx: Context): String? = prefs(ctx).getString(KEY_LAST_ID, null)
+    fun isPaired(ctx: Context): Boolean = topic(ctx).isNotBlank()
 
-    fun setLastId(ctx: Context, id: String) = prefs(ctx).edit().putString(KEY_LAST_ID, id).apply()
+    /** Zeitpunkt (Unix-Sekunden) der letzten empfangenen Nachricht, für das Nachholen. */
+    fun lastTime(ctx: Context): Long = prefs(ctx).getLong(KEY_LAST_TIME, 0L)
+
+    fun setLastTime(ctx: Context, time: Long) = prefs(ctx).edit().putLong(KEY_LAST_TIME, time).apply()
+
+    fun botSeen(ctx: Context): Long = prefs(ctx).getLong(KEY_BOT_SEEN, 0L)
+
+    fun botText(ctx: Context): String = prefs(ctx).getString(KEY_BOT_TEXT, null) ?: ""
+
+    fun setBotStatus(ctx: Context, time: Long, text: String) =
+        prefs(ctx).edit().putLong(KEY_BOT_SEEN, time).putString(KEY_BOT_TEXT, text).apply()
 
     fun status(ctx: Context): String = prefs(ctx).getString(KEY_STATUS, null) ?: "Nicht verbunden"
 

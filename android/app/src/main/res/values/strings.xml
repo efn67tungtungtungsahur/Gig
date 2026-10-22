@@ -2,15 +2,18 @@
 <resources>
     <string name="app_name">Gig</string>
     <string name="title">🎁 Gig</string>
-    <string name="intro">Bekommt die Meldungen deines Giveaway-Bots vom Laptop – vor allem, wenn du gewonnen hast.</string>
-    <string name="label_topic">Kanal (steht im Bot-Fenster am Laptop)</string>
+    <string name="intro">Meldet sich, sobald der Giveaway-Bot auf deinem Laptop etwas für dich hat – vor allem, wenn du gewonnen hast.</string>
+    <string name="pair">📷 Mit Laptop koppeln</string>
+    <string name="repair">📷 Neu mit Laptop koppeln</string>
+    <string name="history">Letzte Benachrichtigungen</string>
+    <string name="empty">Noch nichts empfangen.</string>
+    <string name="advanced">⚙️ Erweitert ▾</string>
+    <string name="label_topic">Kanal</string>
     <string name="hint_topic">gig-xxxxxxxxxx</string>
     <string name="label_server">Server</string>
     <string name="hint_server">https://ntfy.sh</string>
     <string name="save">Speichern &amp; verbinden</string>
     <string name="test">Test senden</string>
     <string name="stop">Stoppen</string>
-    <string name="battery">Akku-Optimierung ausschalten (empfohlen)</string>
-    <string name="history">Letzte Benachrichtigungen</string>
-    <string name="empty">Noch nichts empfangen.</string>
+    <string name="battery">Akku-Optimierung ausschalten</string>
 </resources>

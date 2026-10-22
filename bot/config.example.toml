@@ -1,0 +1,84 @@
+# Gig – Reddit-Giveaway-Bot – Einstellungen
+# Beim ersten Start wird diese Datei automatisch nach config.toml kopiert.
+# Ändere nur config.toml, nicht diese Vorlage.
+
+[search]
+# Subreddits, in denen nach Giveaways gesucht wird (ohne "r/")
+subreddits = ["RepWatchClud"]
+
+# Optional: Reddit-weite Suchen, z. B. ["rep watch giveaway"]. Leer = aus.
+search_queries = []
+
+# Ein Post gilt als Giveaway, wenn Titel oder Flair eines dieser Wörter enthält
+giveaway_keywords = ["giveaway", "give away", "gewinnspiel", "raffle"]
+
+# ...außer der Titel enthält eines davon (Gewinner-Bekanntgaben, beendete Giveaways)
+exclude_keywords = [
+  "winner announce", "winners announce", "announcing the winner", "winner is", "winners are",
+  "winner:", "winners:", "result", "congrat", "ended", "closed", "is over", "gewinner",
+]
+
+# Ältere Posts werden ignoriert (Stunden)
+max_post_age_hours = 168
+
+[enter]
+# true  = der Bot kommentiert automatisch und nimmt so teil
+# false = nur Benachrichtigung aufs Handy, du kommentierst selbst
+auto_comment = true
+
+# Einer davon wird zufällig als Kommentar gepostet
+comments = [
+  "I'm in! Good luck everyone 🍀",
+  "Count me in, that's a beautiful piece ⌚🔥",
+  "Would love to win this one, thanks for the giveaway! 🙏",
+  "Great giveaway, fingers crossed 🤞",
+]
+
+# Verlangt der Post z. B. 'comment "Sprite" to enter', wird genau das kommentiert
+use_requested_comment = true
+
+# Schutz vor Spam / Reddit-Sperren
+max_comments_per_day = 20
+min_seconds_between_comments = 90
+
+[wins]
+# Wörter, die in Antworten/Nachrichten auf einen Gewinn hindeuten
+win_keywords = [
+  "congrat", "you won", "you've won", "you have won", "winner",
+  "gewonnen", "glückwunsch", "gratuliere",
+]
+
+# So viele Tage nach dem Post wird ein Giveaway auf Gewinner geprüft
+watch_days = 21
+
+[notify]
+# ntfy-Server, über den die Benachrichtigungen ans Handy gehen
+ntfy_server = "https://ntfy.sh"
+
+# Geheimer Kanalname – wird beim ersten Start automatisch erzeugt.
+# Genau diesen Namen trägst du in der Handy-App ein.
+ntfy_topic = ""
+
+# Auch melden, wenn der Bot teilnimmt oder ein neues Giveaway findet
+# (false = nur Gewinne und Probleme)
+notify_entries = true
+
+[bot]
+# Wie oft nach neuen Giveaways gesucht wird (Sekunden)
+poll_seconds = 180
+
+# Wie oft auf Gewinne geprüft wird (Sekunden)
+win_check_seconds = 600
+
+# Browser unsichtbar im Hintergrund. Falls Reddit blockt: auf false stellen.
+headless = true
+
+# "" = mitgelieferter Chromium (python -m playwright install chromium)
+# "msedge" = Microsoft Edge (auf Windows schon installiert), "chrome" = Google Chrome
+browser_channel = ""
+
+# Optional: Pfad zu einer Browser-Datei (überschreibt browser_channel)
+browser_executable = ""
+
+# Reddit-Adresse für Abfragen (old.reddit.com ist schlanker und stabiler)
+reddit_url = "https://old.reddit.com"

@@ -1,0 +1,5 @@
+*.bat text eol=crlf
+*.sh text eol=lf
+android/gradlew text eol=lf
+*.jar binary
+*.keystore binary

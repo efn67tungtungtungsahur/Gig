@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple">#7C3AED</color>
+    <color name="purple_dark">#5B21B6</color>
+    <color name="background">#FAFAFA</color>
+    <color name="status_background">#EDE9FE</color>
+    <color name="muted">#6B7280</color>
+    <color name="divider">#E5E7EB</color>
+    <color name="ic_launcher_background">#7C3AED</color>
+</resources>

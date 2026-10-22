@@ -228,6 +228,12 @@ def test_logout_is_reported_once_and_bot_keeps_running(cfg, tmp_path):
     reddit.new_posts = lambda sub: (_ for _ in ()).throw(NotLoggedIn("weg"))
     bot, clock = make_bot(cfg, tmp_path, reddit)
     bot.tick()
+    clock.t += 20
+    bot.tick()  # erfolgreicher Gewinn-Check dazwischen
     clock.t += cfg.poll_seconds + 1
     bot.tick()
     assert [m["title"] for m in bot.notifier.sent] == ["⚠️ Bot ist bei Reddit ausgeloggt"]
+
+    clock.t += 7 * 3600  # besteht das Problem weiter, kommt nach 6 h eine Erinnerung
+    bot.tick()
+    assert len(bot.notifier.sent) == 2

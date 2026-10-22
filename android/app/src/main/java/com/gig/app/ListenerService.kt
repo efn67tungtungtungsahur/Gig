@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.IOException
@@ -34,10 +35,17 @@ class ListenerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         AppNotifications.createChannels(this)
         val notification = AppNotifications.serviceNotification(this, "Verbinde …")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(AppNotifications.SERVICE_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(AppNotifications.SERVICE_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(AppNotifications.SERVICE_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(AppNotifications.SERVICE_ID, notification)
+            }
+        } catch (e: Exception) {
+            // Android erlaubt den Start aus dem Hintergrund nicht immer – beim nächsten Öffnen der App klappt es.
+            Log.w("Gig", "Vordergrund-Dienst nicht erlaubt", e)
+            stopSelf()
+            return START_NOT_STICKY
         }
         if (worker?.isAlive != true) {
             running = true

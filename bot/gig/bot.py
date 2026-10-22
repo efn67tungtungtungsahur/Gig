@@ -29,6 +29,7 @@ from .state import DAY, Giveaway, State
 log = logging.getLogger("gig")
 
 TICK_SECONDS = 15
+PROBLEM_REPEAT_SECONDS = 6 * 3600
 
 
 class GiveawayBot:
@@ -43,6 +44,7 @@ class GiveawayBot:
         self.rng = rng or random.Random()
         self._next_scan = 0.0
         self._next_win_check = 0.0
+        self._has_problem = False
 
     @property
     def username(self) -> str:
@@ -62,14 +64,18 @@ class GiveawayBot:
     def tick(self) -> None:
         now = self.clock()
         try:
+            reached_reddit = False
             if now >= self._next_scan:
                 self._next_scan = now + self.cfg.poll_seconds
                 self.scan()
+                reached_reddit = True
             self.enter_due()
             if now >= self._next_win_check:
                 self._next_win_check = now + self.cfg.win_check_seconds
                 self.check_wins()
-            self._problem_solved()
+                reached_reddit = True
+            if reached_reddit:
+                self._problem_solved()
         except BrowserClosed:
             raise
         except NotLoggedIn:
@@ -287,12 +293,15 @@ class GiveawayBot:
         self.state.outbox = pending
 
     def _problem(self, key: str, title: str, message: str) -> None:
+        """Meldet ein Problem – höchstens alle 6 Stunden, solange es besteht."""
         log.error("%s: %s", title, message)
-        if key not in self.state.problems:
-            self.state.problems[key] = self.clock()
+        self._has_problem = True
+        now = self.clock()
+        if now - self.state.problems.get(key, 0) >= PROBLEM_REPEAT_SECONDS:
+            self.state.problems[key] = now
             self.notifier.send(title, message, priority=4)
 
     def _problem_solved(self) -> None:
-        if self.state.problems:
-            log.info("Problem behoben – Bot läuft wieder normal.")
-            self.state.problems.clear()
+        if self._has_problem:
+            log.info("Reddit antwortet wieder – Bot läuft normal weiter.")
+            self._has_problem = False

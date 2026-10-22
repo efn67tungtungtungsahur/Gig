@@ -99,5 +99,6 @@ class State:
         self.seen_posts = {k: t for k, t in self.seen_posts.items() if now - t < 60 * DAY}
         self.notified = {k: t for k, t in self.notified.items() if now - t < 90 * DAY}
         self.comment_times = [t for t in self.comment_times if now - t < DAY]
+        self.problems = {k: t for k, t in self.problems.items() if now - t < DAY}
         keep = (watch_days + 7) * DAY
         self.giveaways = {k: g for k, g in self.giveaways.items() if now - g.created_utc < keep}

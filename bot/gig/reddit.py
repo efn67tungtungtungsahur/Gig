@@ -130,18 +130,15 @@ class RedditSession:
                 reason = self._reason(text)
                 if reason:
                     raise RedditError(f"{path}: nicht zugänglich ({reason})")
-                raise AccessBlocked(
-                    f"Reddit verweigert den Zugriff (HTTP {status}). Bist du noch eingeloggt? "
-                    "Falls ja: in config.toml headless = false setzen."
-                )
+                raise AccessBlocked(f"Reddit verweigert den Zugriff (HTTP {status}). Gig versucht es automatisch weiter.")
             if status >= 400:
                 raise RedditError(f"HTTP {status} bei {path}")
             try:
                 return json.loads(text)
             except ValueError:
                 raise AccessBlocked(
-                    f"Reddit hat statt Daten eine Webseite geliefert ({path}) – evtl. Captcha oder "
-                    "Sperrseite. Setze in config.toml headless = false und starte neu."
+                    f"Reddit hat statt Daten eine Webseite geliefert ({path}), z. B. Captcha oder Sperrseite. "
+                    "Gig versucht es automatisch weiter."
                 ) from None
         raise RedditError("Reddit: dauerhaft zu viele Anfragen (429)")
 

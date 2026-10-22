@@ -49,6 +49,7 @@ class GiveawayBot:
         self._next_scan = 0.0
         self._next_win_check = 0.0
         self._has_problem = False
+        self._failing_since = 0.0
         # Bestimmte Probleme an den Aufrufer weitergeben, der sie besser lösen kann
         # (Login-Fenster öffnen bzw. auf sichtbaren Browser wechseln).
         self.escalate_login = escalate_login
@@ -90,6 +91,7 @@ class GiveawayBot:
                 self.check_wins()
                 reached_reddit = True
             if reached_reddit:
+                self._failing_since = 0.0
                 self._problem_solved()
         except BrowserClosed:
             raise
@@ -104,6 +106,10 @@ class GiveawayBot:
             self._problem("blocked", "⚠️ Reddit blockiert den Bot", str(e))
         except RedditError as e:
             log.warning("Reddit-Fehler: %s", e)
+            self._failing_since = self._failing_since or now
+            if now - self._failing_since >= 3600:
+                self._problem("unreachable", "⚠️ Reddit antwortet nicht",
+                              f"Seit über einer Stunde Fehler: {e}\nGig versucht es automatisch weiter.")
         except Exception:
             log.exception("Unerwarteter Fehler – Bot läuft weiter")
         finally:

@@ -287,3 +287,22 @@ def test_escalation_to_caller(cfg, tmp_path):
     bot, _ = make_bot(cfg, tmp_path, reddit, escalate_login=True)
     with pytest.raises(NotLoggedIn):
         bot.tick()
+
+
+def test_persistent_reddit_errors_are_reported_after_an_hour(cfg, tmp_path):
+    from gig.reddit import RedditError
+
+    reddit = FakeReddit([])
+    reddit.inbox = lambda: (_ for _ in ()).throw(RedditError("HTTP 500"))
+    bot, clock = make_bot(cfg, tmp_path, reddit)
+    for _ in range(6):  # 6 × 10 Minuten
+        bot.tick()
+        assert bot.notifier.sent == []
+        clock.t += 601
+    bot.tick()
+    assert [m["title"] for m in bot.notifier.sent] == ["⚠️ Reddit antwortet nicht"]
+
+    reddit.inbox = lambda: []
+    clock.t += 601
+    bot.tick()
+    assert bot._failing_since == 0.0

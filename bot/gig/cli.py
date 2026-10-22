@@ -153,6 +153,7 @@ def cmd_run(cfg: Config, args) -> int:
     if not background:
         _print_pairing(cfg)
 
+    failures = 0
     while True:
         try:
             with open_browser(cfg, minimized=True) as (_, page):
@@ -178,6 +179,13 @@ def cmd_run(cfg: Config, args) -> int:
             log.error("❌ %s", e)
             _notify_problem(state, notifier, "blocked", "⚠️ Reddit blockiert den Bot", str(e))
             return 3
+        except RedditError as e:  # z. B. direkt nach dem Hochfahren noch kein WLAN
+            failures += 1
+            log.warning("Reddit nicht erreichbar (%s) – neuer Versuch in 1 Minute", e)
+            if failures >= 3:
+                _notify_problem(state, notifier, "unreachable", "⚠️ Reddit nicht erreichbar",
+                                f"{e}\nGig versucht es automatisch weiter.")
+            time.sleep(60)
         except BrowserClosed:
             log.error("Der Browser wurde geschlossen – Bot beendet.")
             return 1

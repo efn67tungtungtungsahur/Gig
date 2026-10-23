@@ -34,6 +34,8 @@ BASE_URL = os.environ.get(
 LOCK_PORT = 47613
 UPDATE_EVERY = int(os.environ.get("GIG_UPDATE_EVERY", 6 * 3600))
 KEEP = ("data/", "config.toml")  # wird bei Updates nie überschrieben
+# Fernschalter: Steht in SWITCH „off“, beendet sich Gig nach dem nächsten Update von selbst.
+SWITCH = APP_DIR / "SWITCH"
 
 log = logging.getLogger("gig.launcher")
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -155,6 +157,33 @@ def stop_bot(proc: subprocess.Popen) -> None:
         proc.wait(timeout=30)
 
 
+def switched_off() -> bool:
+    try:
+        return SWITCH.read_text(encoding="utf-8").strip().lower() == "off"
+    except OSError:
+        return False
+
+
+def shut_down() -> int:
+    """Gig wurde aus der Ferne abgeschaltet: laufenden Bot stoppen, einmal Bescheid geben, beenden."""
+    (DATA_DIR / "stop").touch()  # falls noch ein Bot läuft, beendet er sich beim nächsten Durchlauf
+    log.info("Gig ist abgeschaltet – es läuft nichts mehr.")
+    marker = DATA_DIR / ".off_notified"
+    if not marker.exists():
+        try:
+            sys.path.insert(0, str(APP_DIR))
+            from gig.config import load_config
+            from gig.notify import Notifier
+
+            cfg = load_config(APP_DIR / "config.toml")
+            if Notifier(cfg.ntfy_server, cfg.ntfy_topic).send(
+                    "⏹ Gig ist abgeschaltet", "Der Bot auf deinem Laptop macht nichts mehr.", priority=4):
+                marker.touch()
+        except Exception as e:
+            log.warning("Abschalt-Nachricht nicht gesendet: %s", e)
+    return 0
+
+
 def restart_launcher(lock: socket.socket) -> None:
     lock.close()
     log.info("Launcher wurde aktualisiert – starte neu")
@@ -173,6 +202,8 @@ def supervise() -> int:
     launcher_hash = sha256((APP_DIR / "launcher.py").read_bytes())
     if update() and sha256((APP_DIR / "launcher.py").read_bytes()) != launcher_hash:
         restart_launcher(lock)
+    if switched_off():
+        return shut_down()
     ensure_deps()
 
     backoff = 30
@@ -193,6 +224,8 @@ def supervise() -> int:
         if updated:
             if sha256((APP_DIR / "launcher.py").read_bytes()) != launcher_hash:
                 restart_launcher(lock)
+            if switched_off():
+                return shut_down()
             ensure_deps()
             continue
         log.warning("Bot beendet (Code %s)", proc.returncode)
@@ -213,6 +246,8 @@ def main() -> int:
         update()
         ensure_deps(force=True)
         return 0
+    if switched_off():
+        return shut_down()
     return supervise()
 
 

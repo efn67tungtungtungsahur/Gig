@@ -1,5 +1,9 @@
 # Gig – Reddit-Giveaway-Bot 🎁⌚
 
+> **⏹ Gig ist zurzeit abgeschaltet.** Installierte Bots beenden sich beim nächsten Update von selbst
+> (spätestens nach 6 Stunden oder beim nächsten Laptop-Start) und melden „⏹ Gig ist abgeschaltet“ aufs Handy.
+> Wieder einschalten: in `bot/SWITCH` `on` statt `off` eintragen.
+
 Gig läuft unsichtbar auf deinem Laptop. Er sucht in r/RepWatchClud und weiteren Rep-Uhren-Communities nach Giveaways, liest die Teilnahmebedingungen und nimmt teil. Wenn du gewinnst, vibriert dein **Handy**.
 
 ```

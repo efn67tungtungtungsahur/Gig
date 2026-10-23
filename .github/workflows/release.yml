@@ -88,7 +88,7 @@ jobs:
           Start-Process "$env:LOCALAPPDATA\Gig\venv\Scripts\pythonw.exe" -ArgumentList ('"' + "$app\launcher.py" + '"') -WorkingDirectory $app
           # GitHub-Server werden von Reddit gesperrt – erwartet wird deshalb die Meldung
           # „Reddit blockiert“ bzw. „Login nötig“. Das beweist die ganze Kette bis zum Handy.
-          & $py .github/scripts/wait_ntfy.py $env:GIG_NTFY_TOPIC "Reddit|Gig läuft" 300
+          & $py .github/scripts/wait_ntfy.py $env:GIG_NTFY_TOPIC "Reddit|Gig läuft|abgeschaltet" 300
           $code = $LASTEXITCODE
           Get-ChildItem "$app\data" | Format-Table Name, Length
           foreach ($f in "launcher.log", "bot.log", "bot-errors.log") {
@@ -121,7 +121,7 @@ jobs:
           nohup ~/.gig/venv/bin/python launcher.py >/dev/null 2>&1 &
           cd "$GITHUB_WORKSPACE"
           code=0
-          ~/.gig/venv/bin/python .github/scripts/wait_ntfy.py "$GIG_NTFY_TOPIC" "Reddit|Gig läuft" 300 || code=$?
+          ~/.gig/venv/bin/python .github/scripts/wait_ntfy.py "$GIG_NTFY_TOPIC" "Reddit|Gig läuft|abgeschaltet" 300 || code=$?
           for f in launcher.log bot.log bot-errors.log; do echo "----- $f -----"; cat ~/.gig/app/data/$f 2>/dev/null || true; done
           exit $code
 

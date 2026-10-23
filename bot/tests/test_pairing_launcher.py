@@ -129,3 +129,29 @@ def test_single_instance(launcher, monkeypatch):
     assert first is not None
     assert launcher.single_instance() is None
     first.close()
+
+
+def test_remote_switch_off(launcher, tmp_path, monkeypatch, server):
+    monkeypatch.setattr(launcher, "SWITCH", tmp_path / "SWITCH")
+    assert not launcher.switched_off()
+    (tmp_path / "SWITCH").write_text("off\n")
+    assert launcher.switched_off()
+    (tmp_path / "SWITCH").write_text("on")
+    assert not launcher.switched_off()
+
+    sent = []
+    import gig.notify
+
+    monkeypatch.setattr(gig.notify.Notifier, "send", lambda self, title, *a, **k: sent.append(title) or True)
+    monkeypatch.setattr(launcher, "APP_DIR", BOT_DIR)  # echte Config-Vorlage benutzen
+    monkeypatch.setenv("GIG_NTFY_TOPIC", "gig-test")
+    config = BOT_DIR / "config.toml"
+    created = not config.exists()
+    try:
+        assert launcher.shut_down() == 0
+        assert launcher.shut_down() == 0
+    finally:
+        if created:
+            config.unlink(missing_ok=True)
+    assert sent == ["⏹ Gig ist abgeschaltet"]  # nur einmal
+    assert (tmp_path / "data" / "stop").exists()

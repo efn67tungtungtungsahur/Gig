@@ -1,3 +1,5 @@
+> **⏹ Gig ist zurzeit abgeschaltet.** Bitte nicht neu installieren. Bereits installierte Bots beenden sich von selbst.
+
 ## 🎁 Gig einrichten – 2 Schritte, danach läuft alles von selbst
 
 ### 1. Laptop (einmalig, ca. 5 Minuten)

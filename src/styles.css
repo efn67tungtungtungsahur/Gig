@@ -35,6 +35,8 @@
   --rank-5: #129a86;
   --rank-6: #2a73d9;
   --rank-7: #d6336c;
+  --rank-8: #8b3fe0;
+  --rank-8-bg: linear-gradient(120deg, #e0a800, #e0457b 38%, #8b3fe0 68%, #1fa3c9);
   --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 4px 16px rgba(11, 11, 11, 0.04);
   --radius: 18px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -72,6 +74,8 @@
     --rank-5: #2fc0a8;
     --rank-6: #3d8bfd;
     --rank-7: #ef4f7d;
+    --rank-8: #b06cff;
+    --rank-8-bg: linear-gradient(120deg, #ffd34d, #ff5fa2 38%, #b06cff 68%, #3fd8ff);
     --shadow: none;
   }
 }
@@ -106,6 +110,8 @@
   --rank-5: #2fc0a8;
   --rank-6: #3d8bfd;
   --rank-7: #ef4f7d;
+  --rank-8: #b06cff;
+  --rank-8-bg: linear-gradient(120deg, #ffd34d, #ff5fa2 38%, #b06cff 68%, #3fd8ff);
   --shadow: none;
 }
 
@@ -963,6 +969,8 @@ textarea.input {
   --rank-5: #2fc0a8;
   --rank-6: #3d8bfd;
   --rank-7: #ef4f7d;
+  --rank-8: #b06cff;
+  --rank-8-bg: linear-gradient(120deg, #ffd34d, #ff5fa2 38%, #b06cff 68%, #3fd8ff);
   --fig-skin: #2c2c2a;
   --fig-muscle: #403f3c;
   --fig-edge: #0b0b0c;
@@ -1079,6 +1087,9 @@ textarea.input {
 .rank-badge svg {
   flex: none;
   filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.25));
+}
+.rank-badge.olymp svg {
+  filter: drop-shadow(0 0 3px rgba(176, 108, 255, 0.75)) drop-shadow(0 0 6px rgba(255, 95, 162, 0.35));
 }
 .meter {
   height: 6px;

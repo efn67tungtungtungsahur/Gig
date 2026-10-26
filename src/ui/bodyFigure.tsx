@@ -130,6 +130,25 @@ const BACK_LINES = [
 
 const MIRROR = 'matrix(-1 0 0 1 200 0)';
 
+/** Fill marker for the top rank (Olympionike): painted with the shimmering holo gradient. */
+export const HOLO = 'holo';
+const HOLO_STOPS = ['#ffd34d', '#ff5fa2', '#b06cff', '#3fd8ff'];
+
+function reduceMotion(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+function HoloGradient({ id }: { id: string }) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect">
+      {HOLO_STOPS.map((c, i) => (
+        <stop key={c} offset={i / (HOLO_STOPS.length - 1)} stopColor={c} />
+      ))}
+      {!reduceMotion() && <animateTransform attributeName="gradientTransform" type="translate" values="-1 -1; 1 1; -1 -1" dur="6s" repeatCount="indefinite" />}
+    </linearGradient>
+  );
+}
+
 interface FigureProps {
   /** Muscle → fill color; muscles without a color stay grey. */
   fills: Partial<Record<MuscleGroup, string | undefined>>;
@@ -143,6 +162,8 @@ function Side({ shapes, lines, label, fills, selected, onSelect, hot }: FigurePr
   const uid = useId().replace(/:/g, '');
   const sheen = `sheen${uid}`;
   const glow = `glow${uid}`;
+  const holo = `holo${uid}`;
+  const paint = (m: MuscleGroup) => (fills[m] === HOLO ? `url(#${holo})` : fills[m]);
   const both = (key: string, render: (transform?: string) => ReactElement) => (
     <g key={key}>
       {render()}
@@ -166,6 +187,7 @@ function Side({ shapes, lines, label, fills, selected, onSelect, hot }: FigurePr
             <stop offset="0.45" stopColor="#fff" stopOpacity="0" />
             <stop offset="1" stopColor="#000" stopOpacity="0.32" />
           </linearGradient>
+          <HoloGradient id={holo} />
           <filter id={glow} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="2.6" result="b" />
             <feMerge>
@@ -177,7 +199,7 @@ function Side({ shapes, lines, label, fills, selected, onSelect, hot }: FigurePr
         <path className="fig-skin" d={SILHOUETTE} />
         {grey.map((s, i) => both(`g${i}`, (t) => <path {...muscleProps(s)} transform={t} fill="var(--fig-muscle)" />))}
         <g filter={`url(#${glow})`}>
-          {colored.map((s, i) => both(`c${i}`, (t) => <path {...muscleProps(s)} transform={t} fill={fills[s.muscle!]} />))}
+          {colored.map((s, i) => both(`c${i}`, (t) => <path {...muscleProps(s)} transform={t} fill={paint(s.muscle!)} />))}
         </g>
         <g pointerEvents="none">
           {shapes.map((s, i) => both(`s${i}`, (t) => <path d={s.d} transform={t} fill={`url(#${sheen})`} />))}
@@ -207,27 +229,39 @@ export function levelColor(level: number): string | undefined {
   return level > 0 ? `var(--lvl-${Math.min(5, level)})` : undefined;
 }
 
-/** Rank tier 0–6 (Holz … Champion) → its color. */
+/** Rank tier 0–7 (Holz … Olympionike) → its solid color. */
 export function rankColor(tier: number): string {
   return `var(--rank-${tier + 1})`;
+}
+
+/** Fill for the body figure (the top rank shimmers). */
+export function rankFill(tier: number): string {
+  return tier >= 7 ? HOLO : rankColor(tier);
+}
+
+/** CSS background for bars and legend swatches. */
+export function rankBackground(tier: number): string {
+  return tier >= 7 ? 'var(--rank-8-bg)' : rankColor(tier);
 }
 
 /** Shield in the rank color with the division as pips (I = three). */
 export function RankBadge({ tier, level, name, size = 20 }: { tier: number; level: number; name: string; size?: number }) {
   const uid = useId().replace(/:/g, '');
   const pips = (level % 3) + 1;
+  const top = tier >= 7;
   const shield = 'M10 1 L18.5 4 L18.5 11 C18.5 16.2 14.8 20.2 10 22.2 C5.2 20.2 1.5 16.2 1.5 11 L1.5 4 Z';
   return (
-    <span className="rank-badge">
+    <span className={`rank-badge${top ? ' olymp' : ''}`}>
       <svg width={size} height={size * 1.15} viewBox="0 0 20 23.2" aria-hidden>
         <defs>
+          {top && <HoloGradient id={`rh${uid}`} />}
           <linearGradient id={`rb${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#fff" stopOpacity="0.45" />
             <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
             <stop offset="1" stopColor="#000" stopOpacity="0.3" />
           </linearGradient>
         </defs>
-        <path d={shield} style={{ fill: rankColor(tier) }} stroke="rgba(0,0,0,0.35)" strokeWidth="1" />
+        <path d={shield} style={{ fill: top ? `url(#rh${uid})` : rankColor(tier) }} stroke="rgba(0,0,0,0.35)" strokeWidth="1" />
         <path d={shield} fill={`url(#rb${uid})`} />
         <path d="M10 3.4 L16.4 5.6 L16.4 11 C16.4 15 13.6 18.2 10 19.8" fill="none" stroke="#fff" strokeOpacity="0.35" strokeWidth="0.8" />
         {Array.from({ length: pips }, (_, i) => (

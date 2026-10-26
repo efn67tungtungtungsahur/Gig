@@ -27,6 +27,14 @@
   --lvl-4: #184f95;
   --lvl-5: #0d366b;
   --body-base: #e1e0d9;
+  /* Rank colors (Holz … Champion), Liftoff-style metals */
+  --rank-1: #77502f;
+  --rank-2: #d47530;
+  --rank-3: #8d9bad;
+  --rank-4: #c99400;
+  --rank-5: #129a86;
+  --rank-6: #2a73d9;
+  --rank-7: #d6336c;
   --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 4px 16px rgba(11, 11, 11, 0.04);
   --radius: 18px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -57,6 +65,13 @@
     --lvl-4: #86b6ef;
     --lvl-5: #cde2fb;
     --body-base: #383835;
+    --rank-1: #8a5c3a;
+    --rank-2: #e98d42;
+    --rank-3: #b9c4d2;
+    --rank-4: #f2c230;
+    --rank-5: #2fc0a8;
+    --rank-6: #3d8bfd;
+    --rank-7: #ef4f7d;
     --shadow: none;
   }
 }
@@ -84,6 +99,13 @@
   --lvl-4: #86b6ef;
   --lvl-5: #cde2fb;
   --body-base: #383835;
+  --rank-1: #8a5c3a;
+  --rank-2: #e98d42;
+  --rank-3: #b9c4d2;
+  --rank-4: #f2c230;
+  --rank-5: #2fc0a8;
+  --rank-6: #3d8bfd;
+  --rank-7: #ef4f7d;
   --shadow: none;
 }
 
@@ -919,12 +941,51 @@ textarea.input {
 }
 
 /* Körperübersicht */
+.body-hero {
+  /* Dark stage in both themes so the colors glow */
+  color-scheme: dark;
+  --surface: #161618;
+  --surface-2: #262624;
+  --border: rgba(255, 255, 255, 0.1);
+  --text: #f0efec;
+  --text-2: #c3c2b7;
+  --muted: #898781;
+  --accent: #3987e5;
+  --lvl-1: #184f95;
+  --lvl-2: #2a78d6;
+  --lvl-3: #5598e7;
+  --lvl-4: #86b6ef;
+  --lvl-5: #cde2fb;
+  --rank-1: #8a5c3a;
+  --rank-2: #e98d42;
+  --rank-3: #b9c4d2;
+  --rank-4: #f2c230;
+  --rank-5: #2fc0a8;
+  --rank-6: #3d8bfd;
+  --rank-7: #ef4f7d;
+  --fig-skin: #2c2c2a;
+  --fig-muscle: #403f3c;
+  --fig-edge: #0b0b0c;
+  color: var(--text);
+}
+.card.body-hero,
+.body-hero.mini {
+  background: radial-gradient(120% 80% at 50% 28%, #24282f 0%, #161618 55%, #0f0f10 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.body-hero.mini {
+  border-radius: 14px;
+  padding: 8px 6px 4px;
+}
 .body-figures {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  max-width: 360px;
+  gap: 10px;
+  max-width: 380px;
   margin: 0 auto;
+}
+.body-figures.compact {
+  gap: 2px;
 }
 .body-figures figure {
   margin: 0;
@@ -934,31 +995,59 @@ textarea.input {
   width: 100%;
   height: auto;
   display: block;
+  overflow: visible;
   touch-action: manipulation;
 }
 .body-figures figcaption {
   font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 4px;
 }
-.body-figures .region {
-  stroke: var(--surface);
-  stroke-width: 1.6;
+.body-figures.compact figcaption {
+  font-size: 10px;
+  margin-top: 0;
+}
+.fig-skin {
+  fill: var(--fig-skin);
+  stroke: var(--fig-edge);
+  stroke-width: 1.4;
   stroke-linejoin: round;
 }
-.body-figures .muscle {
+.fig-muscle {
+  stroke: var(--fig-edge);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+}
+.fig-muscle.tap {
   cursor: pointer;
 }
-.body-figures .selected {
-  stroke: var(--text);
-  stroke-width: 2;
-}
-.body-figures .detail {
-  stroke: var(--surface);
-  stroke-width: 1.2;
+.fig-line {
   fill: none;
-  pointer-events: none;
-  opacity: 0.7;
+  stroke: var(--fig-edge);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+.fig-selected {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.fig-muscle.hot {
+  animation: muscle-pulse 1.6s ease-in-out infinite;
+}
+@keyframes muscle-pulse {
+  50% {
+    opacity: 0.68;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fig-muscle.hot {
+    animation: none;
+  }
 }
 .lvl-legend {
   display: flex;
@@ -989,6 +1078,7 @@ textarea.input {
 }
 .rank-badge svg {
   flex: none;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.25));
 }
 .meter {
   height: 6px;

@@ -12,22 +12,30 @@ const LOWER_BODY = new Set<MuscleGroup>(['beine', 'po', 'beinbeuger', 'waden']);
 // ---------------------------------------------------------------------------
 // Ranks
 
-export const RANK_NAMES = ['Bronze', 'Silber', 'Gold', 'Platin', 'Diamant'] as const;
+export const RANK_NAMES = ['Holz', 'Bronze', 'Silber', 'Gold', 'Platin', 'Diamant', 'Champion'] as const;
 const DIVISIONS = ['III', 'II', 'I'];
 
 /**
- * Lower bound of each of the 15 levels (Bronze III … Diamant I) as a share of
+ * Lower bound of each of the 21 levels (Holz III … Champion I) as a share of
  * the "intermediate" standard. Anchors: beginner 0.5, novice 0.71,
  * intermediate 1.0, advanced 1.35, elite 1.73.
  */
-const LEVEL_FLOORS = [0, 0.25, 0.38, 0.5, 0.57, 0.64, 0.71, 0.81, 0.9, 1.0, 1.12, 1.23, 1.35, 1.5, 1.7];
+const LEVEL_FLOORS = [
+  0, 0.12, 0.24, // Holz
+  0.35, 0.42, 0.48, // Bronze
+  0.55, 0.62, 0.68, // Silber
+  0.75, 0.83, 0.91, // Gold
+  1.0, 1.1, 1.2, // Platin
+  1.3, 1.42, 1.53, // Diamant
+  1.65, 1.8, 1.95, // Champion
+];
 const ANCHOR_FRACS = [0.5, 0.71, 1.0, 1.35, 1.73];
 const MAX_SCORE = 2.2;
 
 export interface RankInfo {
-  /** 0 = Bronze III … 14 = Diamant I */
+  /** 0 = Holz III … 20 = Champion I */
   level: number;
-  /** 0 = Bronze … 4 = Diamant */
+  /** 0 = Holz … 6 = Champion */
   tier: number;
   name: string;
   /** Share of the way to the next level, 0–1 (1 at the top). */

@@ -23,12 +23,14 @@ function workout(start: Date, exercises: [string, number, number, number][]): Lo
 }
 
 describe('muscle ranks', () => {
-  it('maps scores to 15 levels from Bronze III to Diamant I', () => {
-    expect(rankFromScore(0).name).toBe('Bronze III');
-    expect(rankFromScore(0.5).name).toBe('Silber III');
+  it('maps scores to 21 levels from Holz III to Champion I', () => {
+    expect(rankFromScore(0).name).toBe('Holz III');
+    expect(rankFromScore(0.5).name).toBe('Bronze I');
+    expect(rankFromScore(0.75).name).toBe('Gold III');
     expect(rankFromScore(1.0).name).toBe('Platin III');
-    expect(rankFromScore(1.05).progress).toBeCloseTo(0.05 / 0.12);
-    expect(rankFromScore(3).name).toBe('Diamant I');
+    expect(rankFromScore(1.05).progress).toBeCloseTo(0.05 / 0.1);
+    expect(rankFromScore(1.7).name).toBe('Champion III');
+    expect(rankFromScore(3).name).toBe('Champion I');
     expect(rankFromScore(3).progress).toBe(1);
   });
 

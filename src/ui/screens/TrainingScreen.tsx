@@ -12,7 +12,7 @@ import { parseLiftoffText, type LiftoffDraft } from '../../domain/ocrParse';
 import { readScreenshots } from '../../integrations/ocr';
 import { Card, Empty, Sheet, Stat, toast, useAction } from '../components';
 import { analyzeBodyMuscles, LOAD_LABELS } from '../../domain/body';
-import { BodyFigure, levelColor, RankBadge } from '../bodyFigure';
+import { BodyFigure, RankBadge, rankColor } from '../bodyFigure';
 import { useNav } from '../nav';
 import { ExerciseProgressSheet, WorkoutDetailSheet } from '../workoutSheets';
 
@@ -227,8 +227,8 @@ export default function TrainingScreen() {
       >
         <button className="muscle-row" onClick={() => go('koerper')} aria-label="Körperübersicht öffnen">
           <div className="row" style={{ alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 150, flex: 'none' }}>
-              <BodyFigure fills={Object.fromEntries(body.muscles.map((m) => [m.muscle, levelColor(m.loadLevel)]))} />
+            <div className="body-hero mini" style={{ width: 150, flex: 'none' }}>
+              <BodyFigure compact fills={Object.fromEntries(body.muscles.map((m) => [m.muscle, m.rank ? rankColor(m.rank.tier) : undefined]))} />
             </div>
             <div className="grow small">
               {body.overall ? (

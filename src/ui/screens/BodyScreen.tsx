@@ -5,7 +5,7 @@ import type { MuscleGroup } from '../../domain/types';
 import { formatKg } from '../../domain/workoutLog';
 import { daysBetween, formatShort, relativeDays } from '../../lib/dates';
 import { useStore } from '../../lib/store';
-import { BodyFigure, levelColor, RankBadge } from '../bodyFigure';
+import { BodyFigure, levelColor, RankBadge, rankColor } from '../bodyFigure';
 import { Card, Segmented } from '../components';
 import { useNav } from '../nav';
 
@@ -16,7 +16,7 @@ const WEEK_LABEL = ['0', '1–3', '4–7', '8–11', '12–15', '16+'];
 const MODE_TEXT: Record<Mode, string> = {
   last: 'Wie stark jeder Muskel gerade beansprucht ist. Jeder harte Satz zählt, Nebenmuskeln halb; nach etwa einem Tag ist die Hälfte abgeklungen.',
   woche: 'Sätze pro Muskel in den letzten 7 Tagen (Nebenmuskeln zählen halb). Für Muskelaufbau sind 10–20 Sätze pro Woche ideal.',
-  rang: 'Rang pro Muskel aus deiner stärksten Übung der letzten 90 Tage im Verhältnis zum Körpergewicht – von Bronze III bis Diamant I.',
+  rang: 'Rang pro Muskel aus deiner stärksten Übung der letzten 90 Tage im Verhältnis zum Körpergewicht – von Holz III bis Champion I.',
 };
 
 export function weeklyStatus(sets: number): string {
@@ -45,7 +45,7 @@ function bestText(m: MuscleStatus): string {
 
 function nextText(m: MuscleStatus): string | undefined {
   const n = m.next;
-  if (!n) return m.rank ? 'Höchster Rang erreicht 💎' : undefined;
+  if (!n) return m.rank ? 'Höchster Rang erreicht 🏆' : undefined;
   return n.weight !== undefined ? `${n.exercise.name} ${formatKg(n.weight)} × ${n.reps}` : `${n.exercise.name} ${n.reps} Wdh.`;
 }
 
@@ -58,10 +58,13 @@ export default function BodyScreen() {
   const body = useMemo(() => analyzeBodyMuscles(data, settings), [data, settings]);
   const sel = body.muscles.find((m) => m.muscle === selected);
 
-  const level = (m: MuscleStatus) => (mode === 'last' ? m.loadLevel : mode === 'woche' ? m.weeklyLevel : m.rank ? m.rank.tier + 1 : 0);
-  const fills = Object.fromEntries(body.muscles.map((m) => [m.muscle, levelColor(level(m))]));
-  const legend =
-    mode === 'last' ? LOAD_LABEL : mode === 'woche' ? WEEK_LABEL.map((l, i) => (i ? `${l} Sätze` : '0 Sätze')) : ['kein Rang', ...RANK_NAMES];
+  const fill = (m: MuscleStatus) =>
+    mode === 'rang' ? (m.rank ? rankColor(m.rank.tier) : undefined) : levelColor(mode === 'last' ? m.loadLevel : m.weeklyLevel);
+  const fills = Object.fromEntries(body.muscles.map((m) => [m.muscle, fill(m)]));
+  const hot = mode === 'last' ? body.muscles.filter((m) => m.loadLevel >= 4).map((m) => m.muscle) : [];
+  const legend: { label: string; color: string }[] = (
+    mode === 'last' ? LOAD_LABEL : mode === 'woche' ? WEEK_LABEL.map((l, i) => (i ? `${l} Sätze` : '0 Sätze')) : ['kein Rang', ...RANK_NAMES]
+  ).map((label, i) => ({ label, color: i === 0 ? 'var(--fig-muscle)' : mode === 'rang' ? rankColor(i - 1) : `var(--lvl-${i})` }));
 
   const readout = (m: MuscleStatus) => {
     const name = MUSCLE_LABEL[m.muscle];
@@ -79,7 +82,7 @@ export default function BodyScreen() {
 
   return (
     <>
-      <Card>
+      <Card className="body-hero">
         <Segmented
           value={mode}
           onChange={setMode}
@@ -92,12 +95,12 @@ export default function BodyScreen() {
         <div className="readout" aria-live="polite" style={{ marginTop: 10, minHeight: 20 }}>
           {sel ? <strong>{readout(sel)}</strong> : <span className="muted">Tippe auf einen Muskel</span>}
         </div>
-        <BodyFigure fills={fills} selected={selected} onSelect={select} />
+        <BodyFigure fills={fills} selected={selected} onSelect={select} hot={hot} />
         <div className="lvl-legend" aria-label="Legende">
-          {legend.map((l, i) => (
-            <span key={l}>
-              <i style={{ background: i ? `var(--lvl-${i})` : 'var(--body-base)' }} />
-              {l}
+          {legend.map((l) => (
+            <span key={l.label}>
+              <i style={{ background: l.color }} />
+              {l.label}
             </span>
           ))}
         </div>
@@ -119,7 +122,7 @@ export default function BodyScreen() {
               <span className="small muted">{body.trainedCount}/10 Muskeln</span>
             </div>
             <div className="meter" style={{ marginTop: 10 }} aria-label={`${Math.round(body.overall.progress * 100)} % bis zum nächsten Rang`}>
-              <div style={{ width: `${Math.round(body.overall.progress * 100)}%` }} />
+              <div style={{ width: `${Math.round(body.overall.progress * 100)}%`, background: rankColor(body.overall.tier) }} />
             </div>
             <p className="tiny muted">Durchschnitt aller 10 Muskelgruppen – untrainierte zählen mit null. Wer alles trainiert, steigt schneller auf.</p>
           </>
@@ -190,7 +193,7 @@ export default function BodyScreen() {
                 </div>
                 {m.rank && (
                   <div className="meter" style={{ margin: '6px 0 4px' }}>
-                    <div style={{ width: `${Math.round(m.rank.progress * 100)}%` }} />
+                    <div style={{ width: `${Math.round(m.rank.progress * 100)}%`, background: rankColor(m.rank.tier) }} />
                   </div>
                 )}
                 <div className="tiny muted">
@@ -231,7 +234,7 @@ function MuscleDetail({ m, onClose }: { m: MuscleStatus; onClose: () => void }) 
             <span className="small muted">{m.next ? `${Math.round(m.rank.progress * 100)} % zu ${m.next.name}` : 'höchster Rang'}</span>
           </div>
           <div className="meter" style={{ margin: '8px 0' }}>
-            <div style={{ width: `${Math.round(m.rank.progress * 100)}%` }} />
+            <div style={{ width: `${Math.round(m.rank.progress * 100)}%`, background: rankColor(m.rank.tier) }} />
           </div>
           <div className="small">
             <strong>Beste Leistung:</strong> {bestText(m)}

@@ -6,6 +6,7 @@ import { onNotificationTap } from './integrations/notify';
 import { ToastHost, toast } from './ui/components';
 import { IconCalendar, IconDumbbell, IconGrades, IconHeart, IconHome, IconRefresh, IconSettings } from './ui/icons';
 import { NavContext, type Route } from './ui/nav';
+import BodyScreen from './ui/screens/BodyScreen';
 import CalendarScreen from './ui/screens/CalendarScreen';
 import Dashboard from './ui/screens/Dashboard';
 import GradesScreen from './ui/screens/GradesScreen';
@@ -33,10 +34,11 @@ const TITLES: Record<Route, string> = {
   einstellungen: 'Einstellungen',
   bericht: 'Gesamt-Update',
   workout: 'Training läuft',
+  koerper: 'Körperübersicht',
 };
 
 /** Sub pages and where the back button leads. */
-const PARENT: Partial<Record<Route, Route>> = { bericht: 'start', workout: 'training' };
+const PARENT: Partial<Record<Route, Route>> = { bericht: 'start', workout: 'training', koerper: 'training' };
 
 export default function App() {
   const { ready, syncing, syncAll, settings } = useStore();
@@ -101,6 +103,7 @@ export default function App() {
           {route === 'einstellungen' && <SettingsScreen />}
           {route === 'bericht' && <ReportScreen />}
           {route === 'workout' && <WorkoutScreen />}
+          {route === 'koerper' && <BodyScreen />}
         </main>
         <nav className="tabbar">
           {TABS.map((t) => (

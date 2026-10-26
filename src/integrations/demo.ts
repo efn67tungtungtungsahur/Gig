@@ -118,13 +118,13 @@ export function demoData(now = new Date()): AppData {
     push: [
       ['kh_bankdruecken', 'Kurzhantel-Bankdrücken', 22, 10, 4],
       ['schulterdruecken_kh', 'Schulterdrücken (Kurzhanteln)', 14, 10, 3],
-      ['seitheben', 'Seitheben', 8, 12, 3],
+      ['seitheben', 'Seitheben', 7, 12, 3],
       ['trizeps_kabel', 'Trizepsdrücken am Kabel', 20, 12, 3],
     ],
     pull: [
       ['latzug', 'Latzug', 52.5, 10, 4],
       ['kabelrudern', 'Kabelrudern sitzend', 45, 10, 3],
-      ['kh_curls', 'Kurzhantel-Curls', 12, 10, 3],
+      ['kh_curls', 'Kurzhantel-Curls', 11, 10, 3],
     ],
     beine: [
       ['kniebeuge', 'Kniebeugen (Langhantel)', 72.5, 8, 4],
@@ -162,7 +162,8 @@ export function demoData(now = new Date()): AppData {
         targetReps: `${reps}–${reps + 2}`,
         restSec: j === 0 ? 150 : 90,
         sets: Array.from({ length: sets }, (_, n) => ({
-          weight: kg + Math.floor(k / 2) * 2.5,
+          // Isolation exercises progress in small steps.
+          weight: kg + Math.floor(k / 2) * (j === 0 || kind === 'beine' ? 2.5 : 1),
           reps: reps + (k % 2) * 2 - (n >= 2 && noise(i * 7 + j, n) < 0.5 ? 1 : 0),
           done: true,
         })),

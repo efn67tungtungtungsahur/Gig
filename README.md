@@ -24,6 +24,7 @@ Gig Fit ist eine Android-App, die deinen **Google Kalender**, **Fitbit**, **With
 | **Schlaf** | Analyse von Dauer, Regelmäßigkeit, Effizienz und Tief-/REM-Schlaf. Sagt dir, ob du deinen Schlaf verbessern solltest, und schlägt eine Bettzeit vor. **Keine Schlaf-Erinnerungen in der Lernphase:** liegt laut Kalender eine Klausur in den nächsten 7 Tagen (einstellbar) oder steht „Lernen“ im Kalender, bleibt die Erinnerung aus |
 | **Meine Geräte** | Du wählst aus, welche Geräte du hast (nach Kategorien, mit Schnellauswahl). Gig Fit schlägt dann für jedes Training aus deinem Kalender („Push“, „Beine“, „Ganzkörper“ …) passende Übungen mit Sätzen, Wiederholungen und Pausen vor |
 | **Training erfassen** | Starte das Training aus dem Vorschlag oder leer und trag für jede Übung die Sätze mit **Gewicht und Wiederholungen** ein. Die App zeigt, was du letztes Mal geschafft hast, schlägt das nächste Gewicht vor (hast du alle Sätze am oberen Ende geschafft → +2,5 kg), startet nach jedem Satz einen Pausen-Timer (mit Benachrichtigung) und meldet neue Rekorde. Verlauf aller Trainings und Fortschritts-Diagramm pro Übung |
+| **Körperübersicht** | Figur von vorne und hinten mit allen Muskelgruppen in drei Ansichten: **Beanspruchung** (wie stark jeder Muskel gerade belastet ist und wann er wieder erholt ist), **Woche** (Sätze pro Muskel in 7 Tagen, Ziel 10–20) und **Ränge**. Jeder Muskel bekommt einen Rang von **Bronze III bis Diamant I** aus deiner stärksten Übung im Verhältnis zum Körpergewicht, dazu ein Gesamt-Rang, das nächste Ziel („Für Gold I: Latzug 65 kg × 10“) und Hinweise zu Ungleichgewichten |
 | **Noten** | Notenpunkte für 1.–4. Halbjahr wie in Notan: Fachschnitt, Halbjahresschnitt (LK zählen doppelt), Block I nach § 30 GOSTV Brandenburg (8 LK-Halbjahre doppelt + 28 Grundkurse, E I = P ÷ 44 × 40) und Abi-Prognose. Klausur-Anteil pro Fach einstellbar |
 | **Serien** | **Noten-Serie:** Tests und Klausuren ab 13 Punkten in Folge. **Trainings-Serie:** geplante Trainings in Folge durchgezogen. Beide laufen nicht nach einem Tag ab, sondern richten sich nach deinen Terminen im Kalender |
 | **Erinnerungen** | **Test:** 1 Woche, 3 Tage und 2 Tage vorher · **Klausur:** 2 Wochen, 1 Woche, 3 Tage und 2 Tage vorher (Uhrzeit und Abstände einstellbar) |
@@ -63,6 +64,12 @@ Im Tab **Training** auf **„▶ … starten“** tippen. Das Training läuft we
 - **+ Übung hinzufügen:** aus über 80 Übungen oder eine eigene. **+ Satz** fügt einen weiteren Satz hinzu.
 - **Beenden:** Nur abgehakte Sätze werden gespeichert. Das Training zählt automatisch für deine Trainings-Serie.
 
+### Körperübersicht & Muskel-Ränge
+Tab **Training** → **Körperübersicht**. Tippe auf einen Muskel, um Rang, beste Leistung, nächstes Ziel, Sätze und Erholung zu sehen.
+- Die Ränge beruhen auf gängigen Kraft-Standards: geschätztes Maximalgewicht (Epley) im Verhältnis zum Körpergewicht, bei Kurzhanteln pro Hand, bei Klimmzügen, Dips & Co. über die Wiederholungen. Gewertet wird die stärkste Übung der letzten 90 Tage; Nebenmuskeln zählen zu 70 %.
+- Das Körpergewicht kommt von Withings, sonst trägst du es selbst ein. Als Maßstab kannst du die Kraftwerte von Männern oder Frauen wählen.
+- Grundlage sind deine in der App erfassten Sätze und Liftoff-Workouts mit Übungsnamen.
+
 ### Oral-B iO
 Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots von Verlauf und Putzübersicht und importiere sie unter **Gesundheit → Zähne**, oder tippe nach dem Putzen auf **„Gerade geputzt“**.
 
@@ -90,7 +97,7 @@ npx cap sync android && cd android && ./gradlew assembleRelease
 ```
 
 Aufbau:
-- `src/domain/`: reine Logik (Kalender-Erkennung, Erinnerungen, Ferien, Schlafanalyse, Trainingsplaner, Trainings-Tagebuch, Noten & Abi-Berechnung, Serien, Gesamtbericht, Benachrichtigungsplan), getestet in `tests/`
+- `src/domain/`: reine Logik (Kalender-Erkennung, Erinnerungen, Ferien, Schlafanalyse, Trainingsplaner, Trainings-Tagebuch, Muskel-Ränge, Noten & Abi-Berechnung, Serien, Gesamtbericht, Benachrichtigungsplan), getestet in `tests/`
 - `src/integrations/`: Health Connect, iCal, Texterkennung (ML Kit), Liftoff, Benachrichtigungen
 - `src/ui/`: Oberfläche (React)
 - `android/`: Capacitor-Android-Projekt

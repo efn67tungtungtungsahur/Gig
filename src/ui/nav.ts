@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export type Route = 'start' | 'kalender' | 'noten' | 'training' | 'gesundheit' | 'einstellungen' | 'bericht' | 'workout';
+export type Route = 'start' | 'kalender' | 'noten' | 'training' | 'gesundheit' | 'einstellungen' | 'bericht' | 'workout' | 'koerper';
 
 export interface Nav {
   route: Route;

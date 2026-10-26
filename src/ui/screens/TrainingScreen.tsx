@@ -11,6 +11,8 @@ import { useStore } from '../../lib/store';
 import { parseLiftoffText, type LiftoffDraft } from '../../domain/ocrParse';
 import { readScreenshots } from '../../integrations/ocr';
 import { Card, Empty, Sheet, Stat, toast, useAction } from '../components';
+import { analyzeBodyMuscles, LOAD_LABELS } from '../../domain/body';
+import { BodyFigure, levelColor, RankBadge } from '../bodyFigure';
 import { useNav } from '../nav';
 import { ExerciseProgressSheet, WorkoutDetailSheet } from '../workoutSheets';
 
@@ -94,6 +96,8 @@ export default function TrainingScreen() {
   const ls = report.training.liftoff;
   const ts = report.trainingStreak;
 
+  const body = useMemo(() => analyzeBodyMuscles(data, settings), [data, settings]);
+  const tiredFocus = body.muscles.filter((m) => m.loadLevel >= 4 && plan.exercises.some((p) => p.exercise.muscles[0] === m.muscle));
   const active = data.activeWorkout;
   const logged = [...data.workoutLog].sort((a, b) => b.start.localeCompare(a.start));
   const weekAgo = addDays(new Date(), -7).toISOString();
@@ -178,7 +182,7 @@ export default function TrainingScreen() {
         <p className="tiny muted">
           Die Serie richtet sich nach deinen Trainingsterminen im Kalender: Ruhetage zählen nicht, nur ein verpasstes Training beendet sie. Erledigt ist
           ein Training, wenn du es an dem Tag hier erfasst, ein Workout von Fitbit/Liftoff kommt oder du es abhakst. Abgesagte Termine zählen nicht.
-          {ts.next ? ` Nächstes: ${ts.next.title} am ${formatShort(eventDayKey(ts.next))}.` : ''}
+          {ts.next ? ` Nächstes: ${ts.next.title} am ${formatShort(eventDayKey(ts.next))}` : ''}
         </p>
         {ts.sessions.length === 0 ? (
           <p className="small muted" style={{ marginBottom: 0 }}>
@@ -210,6 +214,42 @@ export default function TrainingScreen() {
             ))}
           </ul>
         )}
+      </Card>
+
+      <Card
+        title="Körperübersicht"
+        icon="🧍"
+        action={
+          <button className="btn ghost" onClick={() => go('koerper')}>
+            Öffnen
+          </button>
+        }
+      >
+        <button className="muscle-row" onClick={() => go('koerper')} aria-label="Körperübersicht öffnen">
+          <div className="row" style={{ alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 150, flex: 'none' }}>
+              <BodyFigure fills={Object.fromEntries(body.muscles.map((m) => [m.muscle, levelColor(m.loadLevel)]))} />
+            </div>
+            <div className="grow small">
+              {body.overall ? (
+                <div style={{ marginBottom: 6 }}>
+                  <div className="tiny muted">Gesamt-Rang</div>
+                  <RankBadge tier={body.overall.tier} level={body.overall.level} name={body.overall.name} />
+                </div>
+              ) : (
+                <p className="muted" style={{ marginTop: 0 }}>Noch keine Ränge – erfasse dein erstes Training.</p>
+              )}
+              <div className="tiny muted">Beansprucht</div>
+              <div>
+                {body.muscles
+                  .filter((m) => m.loadLevel >= 1)
+                  .sort((a, b) => b.load - a.load)
+                  .map((m) => `${MUSCLE_LABEL[m.muscle].replace(/ \(.*\)/, '')} (${LOAD_LABELS[m.loadLevel]})`)
+                  .join(', ') || 'nichts – alles erholt'}
+              </div>
+            </div>
+          </div>
+        </button>
       </Card>
 
       <Card
@@ -281,6 +321,15 @@ export default function TrainingScreen() {
             {plan.durationMin} min
           </span>
         </div>
+        {tiredFocus.length > 0 && (
+          <div className="banner warn small" style={{ marginBottom: 8 }}>
+            <span aria-hidden>⚠️</span>
+            <span>
+              {tiredFocus.map((m) => MUSCLE_LABEL[m.muscle].replace(/ \(.*\)/, '')).join(', ')} {tiredFocus.length === 1 ? 'ist' : 'sind'} noch stark
+              beansprucht. Heute leichter trainieren oder einen anderen Fokus wählen.
+            </span>
+          </div>
+        )}
         <div className="banner small" style={{ marginBottom: 8 }}>
           <span aria-hidden>🔥</span>
           <span>

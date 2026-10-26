@@ -63,6 +63,8 @@ export function defaultSettings(today = new Date()): Settings {
     training: {
       goal: 'muskelaufbau',
       stepsGoal: 10000,
+      rankStandard: 'm',
+      bodyWeightKg: null,
     },
     liftoff: {
       apiBase: LIFTOFF_DEFAULT_API_BASE,

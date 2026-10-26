@@ -297,6 +297,10 @@ export interface Settings {
   training: {
     goal: TrainingGoal;
     stepsGoal: number;
+    /** Strength standards used for the muscle ranks. */
+    rankStandard: 'm' | 'w';
+    /** Own body weight when no Withings weight is available. */
+    bodyWeightKg: number | null;
   };
   liftoff: {
     apiBase: string;

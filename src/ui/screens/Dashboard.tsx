@@ -6,6 +6,9 @@ import { daysBetween, formatMinutes, formatShort, formatTime, relativeDays } fro
 import { useStore } from '../../lib/store';
 import { Card, Empty, ScoreRing, Stat, Status, scoreLevel, toast } from '../components';
 import { GradeCircle } from './GradesScreen';
+import { analyzeBodyMuscles } from '../../domain/body';
+import { RankBadge } from '../bodyFigure';
+import { useMemo } from 'react';
 import { useNav } from '../nav';
 
 export default function Dashboard() {
@@ -15,6 +18,7 @@ export default function Dashboard() {
   const nothingConnected =
     !settings.icsUrls.length && !settings.healthConnected && !settings.liftoff.refreshToken && !data.oralb.sessions.length;
   const lift = latestSnapshot(data.liftoff);
+  const muscles = useMemo(() => analyzeBodyMuscles(data, settings), [data, settings]);
 
   const logBrushing = async () => {
     if (settings.demoMode) {
@@ -200,6 +204,15 @@ export default function Dashboard() {
         <div className="stats">
           <Stat label="Workouts (7 T.)" value={training.doneLast7} delta={training.plannedLast7 ? `${training.plannedLast7} geplant` : undefined} />
           <Stat label="Serie" value={`${report.trainingStreak.current > 0 ? '🔥' : ''}${report.trainingStreak.current}`} delta="Trainings nach Plan" />
+          {muscles.overall && (
+            <button className="stat" style={{ border: 0, textAlign: 'left', font: 'inherit', color: 'inherit', cursor: 'pointer' }} onClick={() => go('koerper')}>
+              <div className="label">Gesamt-Rang</div>
+              <div className="value" style={{ fontSize: 18 }}>
+                <RankBadge tier={muscles.overall.tier} level={muscles.overall.level} name={muscles.overall.name} />
+              </div>
+              <div className="delta">{muscles.trainedCount}/10 Muskeln · Körper ›</div>
+            </button>
+          )}
           {lift?.position !== undefined && (
             <Stat
               label="Liftoff-Platz"

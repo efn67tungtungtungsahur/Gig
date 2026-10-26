@@ -86,6 +86,19 @@ export function demoData(now = new Date()): AppData {
       d.health.bloodPressure.push({ date: at(day, 7, 10).toISOString(), systolic: Math.round(118 + noise(i, 11) * 10), diastolic: Math.round(74 + noise(i, 12) * 8), source: 'Withings' });
     }
   }
+  d.health.distance = d.health.steps.map((st, i) => ({ date: st.date, value: Math.round(st.value * (0.00072 + noise(i, 13) * 0.00006) * 100) / 100 }));
+  // Ein Jahr Schritte im Archiv (für die Abzeichen) und ein paar Läufe.
+  for (let i = 365; i > 30; i--) {
+    const day = addDays(today, -i);
+    const steps = Math.round(5500 + noise(i, 14) * 7500 + (i % 37 === 0 ? 12000 : 0));
+    d.activity.days[dayKey(day)] = { steps, km: Math.round(steps * 0.00074 * 100) / 100 };
+  }
+  [26, 19, 12, 5].forEach((ago, i) => {
+    const start = at(addDays(today, -ago), 7, 10);
+    const km = [5.3, 7.8, 10.4, 6.1][i];
+    d.health.workouts.push({ start: start.toISOString(), end: new Date(start.getTime() + km * 6 * 60_000).toISOString(), type: 'running', durationMin: Math.round(km * 6), distanceKm: km, source: 'Fitbit' });
+  });
+  for (let i = 0; i < 9; i++) d.activity.runs.push({ start: at(addDays(today, -300 + i * 25), 7, 0).toISOString(), km: 4 + noise(i, 15) * 4, min: 30 });
   d.health.sources = ['Fitbit', 'Withings'];
   d.health.syncedAt = now.toISOString();
 

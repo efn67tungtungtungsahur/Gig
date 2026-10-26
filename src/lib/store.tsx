@@ -8,6 +8,7 @@ import type { AppData, HolidayPeriod, Settings } from '../domain/types';
 import { syncCalendars } from '../integrations/calendarSync';
 import { demoData } from '../integrations/demo';
 import { syncHealth } from '../integrations/health';
+import { mergeActivity } from '../domain/badges';
 import { fetchBrandenburgHolidays } from '../integrations/holidaysApi';
 import { liftoffWorkouts } from '../integrations/liftoffApi';
 import { applyNotificationPlan } from '../integrations/notify';
@@ -112,7 +113,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           tasks.push(
             syncHealth(now)
               .then((health) => {
-                next = { ...next, health };
+                next = { ...next, health, activity: mergeActivity(next.activity, health) };
                 result.ok.push(`Health Connect: ${health.sleep.length} Nächte, ${health.steps.length} Tage`);
                 if (health.error) result.errors.push(health.error);
               })

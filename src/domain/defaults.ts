@@ -89,6 +89,7 @@ export function emptyData(): AppData {
     health: {
       sleep: [],
       steps: [],
+      distance: [],
       activeCalories: [],
       restingHr: [],
       hrv: [],
@@ -107,6 +108,7 @@ export function emptyData(): AppData {
     workoutLog: [],
     activeWorkout: null,
     rankTests: [],
+    activity: { days: {}, runs: [] },
   };
 }
 
@@ -148,5 +150,6 @@ export function mergeData(stored: Partial<AppData> | null | undefined): AppData 
     workoutLog: rest.workoutLog ?? [],
     activeWorkout: rest.activeWorkout ?? null,
     rankTests: rest.rankTests ?? [],
+    activity: { days: { ...rest.activity?.days }, runs: rest.activity?.runs ?? [] },
   };
 }

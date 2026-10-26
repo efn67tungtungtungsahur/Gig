@@ -8,6 +8,7 @@ import { isNative } from './http';
 export const READ_TYPES: HealthDataType[] = [
   'sleep',
   'steps',
+  'distance',
   'calories',
   'restingHeartRate',
   'heartRateVariability',
@@ -118,17 +119,20 @@ export async function syncHealth(now = new Date()): Promise<HealthData> {
   const end = now;
   const start30 = new Date(now.getTime() - 30 * 86_400_000);
   const start90 = new Date(now.getTime() - 90 * 86_400_000);
+  // Steps, distance and workouts reach back a year for the badges.
+  const start365 = new Date(now.getTime() - 365 * 86_400_000);
 
-  const [sleepRaw, steps, calories, rhr, hrv, weight, bodyFat, bp, workoutsRes] = await Promise.all([
+  const [sleepRaw, steps, distanceM, calories, rhr, hrv, weight, bodyFat, bp, workoutsRes] = await Promise.all([
     safe(() => samples('sleep', start30, end, 200), [], errors, 'Schlaf'),
-    safe(() => daily('steps', start30, end, 'sum'), [], errors, 'Schritte'),
+    safe(() => daily('steps', start365, end, 'sum'), [], errors, 'Schritte'),
+    safe(() => daily('distance', start365, end, 'sum'), [], errors, 'Strecke'),
     safe(() => daily('calories', start30, end, 'sum'), [], errors, 'Kalorien'),
     safe(() => samples('restingHeartRate', start30, end), [], errors, 'Ruhepuls'),
     safe(() => samples('heartRateVariability', start30, end), [], errors, 'HRV'),
     safe(() => samples('weight', start90, end), [], errors, 'Gewicht'),
     safe(() => samples('bodyFat', start90, end), [], errors, 'Körperfett'),
     safe(() => samples('bloodPressure', start90, end), [], errors, 'Blutdruck'),
-    safe(() => Health.queryWorkouts({ startDate: iso(start30), endDate: iso(end), limit: 200, ascending: true }), { workouts: [] }, errors, 'Workouts'),
+    safe(() => Health.queryWorkouts({ startDate: iso(start365), endDate: iso(end), limit: 500, ascending: true }), { workouts: [] }, errors, 'Workouts'),
   ]);
 
   const workouts: WorkoutEntry[] = workoutsRes.workouts.map((w) => ({
@@ -137,6 +141,7 @@ export async function syncHealth(now = new Date()): Promise<HealthData> {
     type: w.workoutType,
     durationMin: Math.round(w.duration / 60),
     calories: w.totalEnergyBurned ? Math.round(w.totalEnergyBurned) : undefined,
+    distanceKm: w.totalDistance ? Math.round(w.totalDistance / 10) / 100 : undefined,
     source: sourceLabel(w),
   }));
 
@@ -151,6 +156,7 @@ export async function syncHealth(now = new Date()): Promise<HealthData> {
   return {
     sleep: mainNights(sleepRaw.map(toNight)),
     steps,
+    distance: distanceM.map((d) => ({ date: d.date, value: Math.round(d.value / 10) / 100 })),
     activeCalories: calories,
     restingHr: dailyAverage(rhr),
     hrv: dailyAverage(hrv),

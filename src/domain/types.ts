@@ -78,11 +78,16 @@ export interface WorkoutEntry {
   source?: string;
   title?: string;
   exercises?: { name: string; sets: number; bestWeight?: number; reps?: number }[];
+  /** Distance of runs and walks (Health Connect). */
+  distanceKm?: number;
 }
 
 export interface HealthData {
   sleep: SleepNight[];
+  /** Daily steps for the last year. */
   steps: DayValue[];
+  /** Daily distance in km for the last year. */
+  distance: DayValue[];
   activeCalories: DayValue[];
   restingHr: DayValue[];
   hrv: DayValue[];
@@ -242,6 +247,12 @@ export interface LoggedWorkout {
   note?: string;
 }
 
+/** Kept forever so badges survive beyond the synced window. */
+export interface ActivityArchive {
+  days: Record<string, { steps?: number; km?: number }>;
+  runs: { start: string; km?: number; min: number }[];
+}
+
 /** A result entered in the rank calculator (counts for the ranks, not for load). */
 export interface RankTest {
   id: string;
@@ -269,6 +280,8 @@ export interface AppData {
   activeWorkout: LoggedWorkout | null;
   /** Saved rank calculator results. */
   rankTests: RankTest[];
+  /** Daily steps/distance and runs, merged on every sync (for badges). */
+  activity: ActivityArchive;
 }
 
 export type TrainingGoal = 'muskelaufbau' | 'kraft' | 'ausdauer' | 'fitness';

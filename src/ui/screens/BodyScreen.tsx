@@ -7,6 +7,7 @@ import { daysBetween, formatShort, relativeDays } from '../../lib/dates';
 import { useStore } from '../../lib/store';
 import { BodyFigure, levelColor, rankBackground, RankEmblem, rankFill, RankLadder, RankRings } from '../bodyFigure';
 import { RankCalculator } from '../rankCalculator';
+import { RankPlaque } from '../badgeArt';
 import { Card, Segmented } from '../components';
 import { useNav } from '../nav';
 
@@ -53,7 +54,7 @@ function nextText(m: MuscleStatus): string | undefined {
 export default function BodyScreen() {
   const { data, settings, updateSettings } = useStore();
   const { go } = useNav();
-  const [page, setPage] = useState<'koerper' | 'rechner'>('koerper');
+  const [page, setPage] = useState<'koerper' | 'rechner' | 'plaketten'>('koerper');
   const [mode, setMode] = useState<Mode>('last');
   const [selected, setSelected] = useState<MuscleGroup | null>(null);
   const [weightDraft, setWeightDraft] = useState<string | null>(null);
@@ -91,7 +92,8 @@ export default function BodyScreen() {
       {(
         [
           ['koerper', 'Körperbild'],
-          ['rechner', 'Rang-Rechner'],
+          ['plaketten', 'Plaketten'],
+          ['rechner', 'Rechner'],
         ] as const
       ).map(([id, label]) => (
         <button key={id} role="tab" aria-selected={page === id} className={page === id ? 'on' : ''} onClick={() => setPage(id)}>
@@ -106,6 +108,48 @@ export default function BodyScreen() {
       <>
         {tabs}
         <RankCalculator body={body} />
+      </>
+    );
+  }
+
+  if (page === 'plaketten') {
+    const short = (m: MuscleGroup) => MUSCLE_LABEL[m].replace(/ \(.*\)/, '').replace('Bauch & Rumpf', 'Bauch');
+    const cells = [
+      { key: 'gesamt', tier: body.overall?.tier ?? null, level: body.overall?.level, rankName: body.overall?.name, label: 'Gesamt', progress: body.overall?.progress, next: undefined as string | undefined, date: undefined as string | undefined },
+      ...body.muscles.map((m) => ({
+        key: m.muscle,
+        muscle: m.muscle,
+        tier: m.rank?.tier ?? null,
+        level: m.rank?.level,
+        rankName: m.rank?.name,
+        label: short(m.muscle),
+        progress: m.rank?.progress,
+        next: m.next ? `Nächste: ${m.next.name}` : m.rank ? 'Höchster Rang' : 'Erste Plakette mit dem ersten Satz',
+        date: m.best ? `seit ${formatShort(new Date(m.best.date))}` : undefined,
+      })),
+    ];
+    return (
+      <>
+        {tabs}
+        <Card className="body-hero">
+          <p className="small secondary" style={{ marginTop: 0 }}>
+            Deine Plaketten-Sammlung: Für jede Muskelgruppe zeigt die Plakette den Rang, den du erreicht hast. Steigst du auf, bekommt sie Flügel, Speer,
+            Hörner oder Krone.
+          </p>
+          <div className="plaque-grid">
+            {cells.map((c) => (
+              <div key={c.key} className="plaque-cell">
+                <RankPlaque tier={c.tier} level={c.level} rankName={c.rankName} label={c.label} muscle={'muscle' in c ? c.muscle : undefined} date={c.date} />
+                {c.tier !== null && c.progress !== undefined && (
+                  <div className="rank-bar" style={{ ['--bar' as string]: rankBackground(c.tier), margin: '2px 8px 0' }}>
+                    <div style={{ width: `${Math.round(c.progress * 100)}%` }} />
+                  </div>
+                )}
+                {c.next && <div className="tiny muted" style={{ textAlign: 'center' }}>{c.next}</div>}
+              </div>
+            ))}
+          </div>
+        </Card>
       </>
     );
   }
@@ -127,15 +171,17 @@ export default function BodyScreen() {
           {sel ? <strong>{readout(sel)}</strong> : <span className="muted">Tippe auf einen Muskel</span>}
         </div>
         <BodyFigure fills={fills} selected={selected} onSelect={select} hot={hot} />
-        <div className="lvl-legend" aria-label="Legende">
-          {legend.map((l) => (
-            <span key={l.label}>
-              <i style={{ background: l.color }} />
-              {l.label}
-            </span>
-          ))}
-        </div>
-        <p className="tiny muted" style={{ marginBottom: 0 }}>
+        {mode !== 'rang' && (
+          <div className="lvl-legend" aria-label="Legende">
+            {legend.map((l) => (
+              <span key={l.label}>
+                <i style={{ background: l.color }} />
+                {l.label}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="tiny muted" style={{ marginBottom: 0, marginTop: mode === 'rang' ? 22 : undefined }}>
           {MODE_TEXT[mode]}
         </p>
       </Card>

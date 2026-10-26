@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { CATEGORY_LABEL, computeBadges, type Badge, type BadgeCategory } from '../../domain/badges';
+import { ActivityBadge } from '../badgeArt';
 import { mergeSessions } from '../../domain/oralb';
 import { signed } from '../../domain/report';
 import type { BrushSession } from '../../domain/types';
@@ -181,6 +183,7 @@ function ActivityTab() {
         </div>
         <BarChart data={bars} series={[{ label: 'Schritte', color: 'var(--series-1)' }]} goal={settings.training.stepsGoal} ariaLabel="Schritte der letzten 14 Tage" />
       </Card>
+      <BadgesCard />
       {rhr.length > 1 && (
         <Card title="Ruhepuls" icon="💓">
           <div className="stats" style={{ marginBottom: 10 }}>
@@ -209,6 +212,96 @@ function ActivityTab() {
         </Card>
       )}
     </>
+  );
+}
+
+function BadgeCell({ b, withGoal = false }: { b: Badge; withGoal?: boolean }) {
+  const when = b.earned
+    ? b.count > 1 && b.lastDate
+      ? `${b.count}× · zuletzt ${formatShort(b.lastDate)}`
+      : b.firstDate
+        ? `am ${formatShort(b.firstDate)}`
+        : 'geschafft'
+    : b.progressText;
+  return (
+    <div className="badge-cell">
+      <ActivityBadge badge={b} size={72} />
+      <div className="title">{b.title}</div>
+      {withGoal && <div className="sub">{b.goal}</div>}
+      <div className="sub" style={b.earned ? { color: 'var(--good-text)' } : undefined}>
+        {when}
+      </div>
+    </div>
+  );
+}
+
+/** Fitbit-style badges for steps, distance and runs. */
+function BadgesCard() {
+  const { data } = useStore();
+  const s = useMemo(() => computeBadges(data), [data]);
+  const [open, setOpen] = useState(false);
+  const de = (n: number, d = 0) => n.toLocaleString('de-DE', { maximumFractionDigits: d, minimumFractionDigits: d });
+  return (
+    <Card
+      title="Abzeichen"
+      icon="🏅"
+      action={
+        <button className="btn ghost" onClick={() => setOpen(true)}>
+          Alle ansehen
+        </button>
+      }
+    >
+      <div className="stats" style={{ marginBottom: 12 }}>
+        <Stat label="Abzeichen" value={`${s.earned}/${s.total}`} />
+        <Stat label="Gesamtstrecke" value={`${de(s.lifetimeKm)} km`} delta={s.estimated ? 'teils aus Schritten geschätzt' : undefined} />
+        {s.bestDay && <Stat label="Bester Tag" value={de(s.bestDay.steps)} delta={formatShort(s.bestDay.date)} />}
+        <Stat label="Läufe" value={s.runs} />
+      </div>
+      {s.recent.length > 0 && (
+        <>
+          <div className="section-title">Zuletzt freigeschaltet</div>
+          <div className="badge-grid">
+            {s.recent.slice(0, 3).map((b) => (
+              <BadgeCell key={b.id} b={b} />
+            ))}
+          </div>
+        </>
+      )}
+      {s.next && (
+        <div className="row" style={{ marginTop: 14, alignItems: 'center' }}>
+          <ActivityBadge badge={s.next} size={60} />
+          <div className="grow">
+            <div className="strong small">Nächstes: {s.next.title}</div>
+            <div className="tiny muted">{s.next.goal}</div>
+            <div className="meter" style={{ margin: '6px 0 3px' }}>
+              <div style={{ width: `${Math.round(s.next.progress * 100)}%` }} />
+            </div>
+            <div className="tiny muted">{s.next.progressText}</div>
+          </div>
+        </div>
+      )}
+      {s.earned === 0 && !s.next && <p className="small muted">Sobald Schritte oder Läufe aus Health Connect kommen, sammelst du hier Abzeichen.</p>}
+      {open && (
+        <Sheet open onClose={() => setOpen(false)} title={`Abzeichen (${s.earned}/${s.total})`}>
+          {(Object.keys(CATEGORY_LABEL) as BadgeCategory[]).map((cat) => (
+            <div key={cat} style={{ marginBottom: 16 }}>
+              <div className="section-title">{CATEGORY_LABEL[cat]}</div>
+              <div className="badge-grid">
+                {s.badges
+                  .filter((b) => b.category === cat)
+                  .map((b) => (
+                    <BadgeCell key={b.id} b={b} withGoal />
+                  ))}
+              </div>
+            </div>
+          ))}
+          <p className="tiny muted">
+            Gezählt werden Schritte, Strecke und Läufe aus Health Connect (z. B. von Fitbit). Die App merkt sich jeden Tag dauerhaft, auch wenn er
+            älter als ein Jahr wird. Wo keine Strecke aufgezeichnet ist, wird sie aus den Schritten geschätzt.
+          </p>
+        </Sheet>
+      )}
+    </Card>
   );
 }
 

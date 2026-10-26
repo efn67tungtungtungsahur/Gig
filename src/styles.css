@@ -1376,3 +1376,122 @@ textarea.input {
   color: var(--muted);
   white-space: nowrap;
 }
+
+/* Plaketten */
+.plaque-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+}
+@media (min-width: 560px) {
+  .plaque-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.plaque-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.plaque {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  max-width: 190px;
+  margin: 0 auto;
+  container-type: inline-size;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+.plaque.olymp {
+  filter: drop-shadow(0 0 10px rgba(176, 108, 255, 0.55)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+.plaque-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.plaque-emblem {
+  position: absolute;
+  top: 12%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+.plaque-emblem .rank-emblem {
+  width: 74cqw;
+  height: auto;
+}
+.plaque-rank,
+.plaque-label,
+.plaque-date {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plaque-rank {
+  top: 57%;
+  font-size: 10.5cqw;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.plaque-label {
+  top: 71%;
+  font-size: 8.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.plaque-date {
+  top: 80%;
+  font-size: 7cqw;
+  opacity: 0.85;
+}
+.plaque.locked .plaque-rank,
+.plaque.locked .plaque-label {
+  color: #a9a8c2;
+}
+
+/* Aktivitäts-Abzeichen */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 8px;
+}
+.badge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+.badge-cell .title {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.badge-cell .sub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+.activity-badge {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+.activity-badge.locked {
+  filter: none;
+}
+.badge-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}

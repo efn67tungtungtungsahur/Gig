@@ -73,6 +73,10 @@ Tab **Training** → **Körperübersicht**. Tippe auf einen Muskel, um Rang, bes
 - Das Körpergewicht kommt von Withings, sonst trägst du es selbst ein. Als Maßstab kannst du die Kraftwerte von Männern oder Frauen wählen.
 - Grundlage sind deine in der App erfassten Sätze und Liftoff-Workouts mit Übungsnamen.
 
+### Plaketten & Abzeichen
+- **Plaketten:** Körperübersicht → Reiter **Plaketten**. Für jede Muskelgruppe und den Gesamt-Rang eine Plakette in Rangfarbe mit Abzeichen, Rang und Datum der besten Leistung.
+- **Abzeichen** (ähnlich wie bei Fitbit, eigene Motive): Gesundheit → Aktivität. **Tagesschritte** von 5.000 bis 50.000, **Gesamtstrecke** vom Marathon über „Bis nach Berlin“, Jakobsweg und Rhein bis einmal um die Welt, **Laufen** (erster Lauf, 5 km, 10 km, Halbmarathon, Marathon, 10/50/100 Läufe). Schritte, Strecke und Läufe kommen über Health Connect (Fitbit); die App merkt sich jeden Tag dauerhaft. Fehlt die Strecke, wird sie aus den Schritten geschätzt.
+
 ### Oral-B iO
 Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots von Verlauf und Putzübersicht und importiere sie unter **Gesundheit → Zähne**, oder tippe nach dem Putzen auf **„Gerade geputzt“**.
 

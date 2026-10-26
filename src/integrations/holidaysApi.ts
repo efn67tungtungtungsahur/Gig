@@ -1,11 +1,13 @@
+import { addDays, dayKey } from '../lib/dates';
 import { parseOpenHolidays } from '../domain/holidays';
 import type { HolidayData } from '../domain/types';
 import { httpRequest } from './http';
 
-/** Loads Brandenburg school holidays for this and the next two years from OpenHolidays. */
+/** Loads Brandenburg school holidays for the next two years from OpenHolidays. */
 export async function fetchBrandenburgHolidays(now = new Date()): Promise<HolidayData | null> {
-  const from = `${now.getFullYear() - 1}-08-01`;
-  const to = `${now.getFullYear() + 2}-12-31`;
+  // The API limits the range to three years.
+  const from = dayKey(addDays(now, -60));
+  const to = dayKey(addDays(now, 730));
   const url =
     'https://openholidaysapi.org/SchoolHolidays?countryIsoCode=DE&subdivisionCode=DE-BB&languageIsoCode=DE' +
     `&validFrom=${from}&validTo=${to}`;

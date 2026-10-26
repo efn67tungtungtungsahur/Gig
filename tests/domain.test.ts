@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classifyEvent, parseFocus, parseIcs, classifyAll } from '../src/domain/calendar';
 import { defaultSettings, emptyData } from '../src/domain/defaults';
-import { biweeklyDates, BUNDLED_HOLIDAYS, holidayMessage, holidayStatus } from '../src/domain/holidays';
+import { biweeklyDates, BUNDLED_HOLIDAYS, holidayMessage, holidayStatus, parseOpenHolidays } from '../src/domain/holidays';
 import { postsToWorkouts, parseLiftoffDuration } from '../src/domain/liftoff';
 import { buildNotificationPlan } from '../src/domain/notificationPlan';
 import { analyzeOralCare } from '../src/domain/oralb';
@@ -58,6 +58,17 @@ describe('Brandenburg holidays', () => {
   it('writes the biweekly message', () => {
     const msg = holidayMessage(BUNDLED_HOLIDAYS, '2026-11-09');
     expect(msg.title).toBe('🏖️ Noch 44 Tage bis zu den Weihnachtsferien');
+  });
+  it('reads the OpenHolidays API format', () => {
+    const periods = parseOpenHolidays([
+      { startDate: '2026-12-23', endDate: '2027-01-02', name: [{ language: 'EN', text: 'Christmas' }, { language: 'DE', text: 'Weihnachtsferien' }] },
+      { startDate: '2026-10-19', endDate: '2026-10-30', name: [{ language: 'DE', text: 'Herbstferien' }] },
+      { bogus: true },
+    ]);
+    expect(periods).toEqual([
+      { name: 'Herbstferien', start: '2026-10-19', end: '2026-10-30' },
+      { name: 'Weihnachtsferien', start: '2026-12-23', end: '2027-01-02' },
+    ]);
   });
   it('schedules every 14 days from the anchor', () => {
     const dates = biweeklyDates('2026-10-26', new Date(2026, 10, 1), new Date(2026, 11, 31));

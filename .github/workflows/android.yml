@@ -114,9 +114,23 @@ jobs:
           tag_name: fit-app-latest
           name: Gig Fit – Android-App (Build ${{ github.run_number }})
           make_latest: false
-          files: GigFit.apk
           body: |
             📱 **Gig Fit für Android** – Build ${{ github.run_number }} vom Commit ${{ github.sha }}.
 
             **Installieren:** `GigFit.apk` unten unter „Assets“ auf dem Handy herunterladen, öffnen und „Installation aus unbekannten Quellen“ für deinen Browser erlauben.
             Neue Versionen installieren sich über die alte – deine Daten bleiben erhalten.
+
+      # Swap the APK with almost no gap: upload under a temporary name first,
+      # then delete the old file and rename. Deleting before uploading made
+      # downloads fail while a new build was being published.
+      - name: APK austauschen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp GigFit.apk GigFit-neu.apk
+          gh release upload fit-app-latest GigFit-neu.apk --clobber --repo "$GITHUB_REPOSITORY"
+          assets=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/fit-app-latest" --jq '.assets[] | "\(.name) \(.id)"')
+          old=$(echo "$assets" | awk '$1=="GigFit.apk"{print $2}')
+          new=$(echo "$assets" | awk '$1=="GigFit-neu.apk"{print $2}')
+          if [ -n "$old" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old"; fi
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new" -f name=GigFit.apk

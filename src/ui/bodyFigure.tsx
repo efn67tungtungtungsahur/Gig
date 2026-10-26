@@ -322,12 +322,17 @@ export function rankBackground(tier: number): string {
 /** Symbols in a ±9 box around the emblem centre: light shape with a dark outline and detail lines. */
 interface EmblemIcon {
   d: string;
+  /** Individual muscles drawn lighter on top of the shape. */
+  blocks?: string;
   lines?: string;
+  /** Size relative to the other symbols. */
+  scale?: number;
 }
 
 const ARM: EmblemIcon = {
   d: 'M-3.2 9 L-3.4 2.4 C-5.2 2 -6.2 0.6 -6.2 -1.4 L-6.2 -6.6 C-6.2 -8 -5.2 -8.9 -3.9 -8.9 L4 -8.9 C5.4 -8.9 6.4 -8 6.4 -6.6 L6.4 -1.2 C6.4 0.8 5.4 2.1 3.9 2.5 L3.8 9 Z',
   lines: 'M-3.1 -8.9 L-3.1 -4.6 M0.1 -8.9 L0.1 -4.6 M3.3 -8.9 L3.3 -4.6 M-6.2 -4.6 C-2 -5 2 -5 6.4 -4.6 M-6.1 -3 C-2.6 -3.4 0.6 -2.8 2.4 -1 C1.2 0.2 -1.6 0.5 -6 0.3 M-3.4 2.4 C-1.2 3 1.6 3 3.9 2.5',
+  scale: 0.78,
 };
 const BACK_ICON: EmblemIcon = {
   d: 'M-8.8 -5.4 C-8 -7.6 -5 -8.6 -2.2 -8.8 L-1.2 -9.2 L1.2 -9.2 L2.2 -8.8 C5 -8.6 8 -7.6 8.8 -5.4 C9 -2.6 7.8 0 5.2 2.4 C4 3.6 3.4 5.6 3.6 9 L-3.6 9 C-3.4 5.6 -4 3.6 -5.2 2.4 C-7.8 0 -9 -2.6 -8.8 -5.4 Z',
@@ -338,12 +343,13 @@ const CHEST: EmblemIcon = {
   lines: 'M-6.2 -7.6 C-5.6 -4.6 -6 -1 -6.4 3.8 M6.2 -7.6 C5.6 -4.6 6 -1 6.4 3.8 M-6.2 2.6 C-4.4 4.4 -1.8 4.6 0 3.4 C1.8 4.6 4.4 4.4 6.2 2.6 M0 -7.4 L0 3.4 M-1.6 -7.6 C-3 -6.8 -4.6 -6.6 -6 -6.8 M1.6 -7.6 C3 -6.8 4.6 -6.6 6 -6.8 M-2.6 6 L2.6 6',
 };
 const ABS: EmblemIcon = {
-  d: 'M-6.4 -8.6 L6.4 -8.6 C6.6 -4 6.2 0.4 5.2 4 C4.2 7 2.4 8.8 0 9 C-2.4 8.8 -4.2 7 -5.2 4 C-6.2 0.4 -6.6 -4 -6.4 -8.6 Z',
-  lines: 'M0 -8.6 L0 8.6 M-6.4 -4.4 C-4 -4 -2 -4 0 -4.4 C2 -4 4 -4 6.4 -4.4 M-6.1 -0.2 C-4 0.2 -2 0.2 0 -0.2 C2 0.2 4 0.2 6.1 -0.2 M-5.2 4 C-3.4 4.4 -1.6 4.4 0 4 C1.6 4.4 3.4 4.4 5.2 4',
+  d: 'M-7.8 -9.2 C-7.4 -5 -7.2 -1 -6.4 2.6 C-5.6 5.6 -3.6 8.2 0 9.4 C3.6 8.2 5.6 5.6 6.4 2.6 C7.2 -1 7.4 -5 7.8 -9.2 Z',
+  blocks: 'M-0.7 -8.6 C-2.6 -8.8 -4.4 -8.6 -5 -8 C-5.3 -6.8 -5.2 -5.6 -4.8 -4.8 C-3.4 -4.4 -2 -4.4 -0.7 -4.8 Z M-0.7 -3.8 C-2.2 -3.4 -3.8 -3.4 -4.9 -3.8 C-5.2 -2.6 -5.1 -1.2 -4.7 -0.2 C-3.4 0.2 -2 0.2 -0.7 -0.2 Z M-0.7 0.8 C-2.1 1.2 -3.5 1.2 -4.5 0.8 C-4.7 2 -4.5 3.2 -4 4.2 C-2.8 4.4 -1.6 4.4 -0.7 4.1 Z M-0.7 5.1 C-1.6 5.4 -2.8 5.3 -3.6 5.1 C-3.2 6.6 -2.2 7.8 -0.7 8.6 Z M 0.7 -8.6 C 2.6 -8.8 4.4 -8.6 5 -8 C 5.3 -6.8 5.2 -5.6 4.8 -4.8 C 3.4 -4.4 2 -4.4 0.7 -4.8 Z M 0.7 -3.8 C 2.2 -3.4 3.8 -3.4 4.9 -3.8 C 5.2 -2.6 5.1 -1.2 4.7 -0.2 C 3.4 0.2 2 0.2 0.7 -0.2 Z M 0.7 0.8 C 2.1 1.2 3.5 1.2 4.5 0.8 C 4.7 2 4.5 3.2 4 4.2 C 2.8 4.4 1.6 4.4 0.7 4.1 Z M 0.7 5.1 C 1.6 5.4 2.8 5.3 3.6 5.1 C 3.2 6.6 2.2 7.8 0.7 8.6 Z',
+  lines: 'M-7.4 -6.6 C-6.4 -5.6 -6 -4.4 -5.8 -3.2 M-7 -2.6 C-6.2 -1.4 -5.8 0 -5.6 1.6 M-6.4 3 C-5.6 4.4 -4.8 5.6 -4 6.6 M7.4 -6.6 C6.4 -5.6 6 -4.4 5.8 -3.2 M7 -2.6 C6.2 -1.4 5.8 0 5.6 1.6 M6.4 3 C5.6 4.4 4.8 5.6 4 6.6',
 };
 const LEG: EmblemIcon = {
-  d: 'M-8.6 -5 C-8.6 -7.4 -7 -8.6 -5 -8.6 L3.6 -8.6 C6.4 -8.6 8.2 -6.8 8.2 -4 L8 -0.6 C7.8 1.6 7.2 3.6 6.8 5.4 C7.8 5.8 8.6 6.6 8.6 7.6 C8.6 8.4 8 8.8 7.2 8.8 L1.2 8.8 C0.4 8.8 0 8.2 0.2 7.4 L1 4.6 C1.4 2.6 1.6 0.6 1.4 -1.6 L-5 -1.6 C-7.2 -1.6 -8.6 -3 -8.6 -5 Z',
-  lines: 'M-6 -5.2 C-2 -6.4 2 -6.2 5.2 -4.8 M5.6 -2.6 C6.6 -1.6 7.2 -0.4 7.6 0.8 M2.2 0.8 C3 2.4 3.2 4 2.6 5.6 M1 6.8 C3 6.4 5 6.2 6.8 5.6',
+  d: 'M-0.6 -9 L-6.8 -8.8 C-7.8 -6.6 -7.8 -3 -6 0 C-6.6 1.6 -6.6 3.6 -5.4 5.8 C-5 6.6 -4.8 7.2 -4.8 7.8 C-5.6 8.2 -5.8 9 -5 9 L-1.6 9 C-1.4 8.4 -1.8 7.8 -2.2 7.4 C-2.2 5.4 -1.6 3.4 -1.8 1.6 C-2 0.8 -2 0.2 -1.6 -0.4 C-1 -2.8 -0.6 -5.6 -0.6 -9 Z M 0.6 -9 L 6.8 -8.8 C 7.8 -6.6 7.8 -3 6 0 C 6.6 1.6 6.6 3.6 5.4 5.8 C 5 6.6 4.8 7.2 4.8 7.8 C 5.6 8.2 5.8 9 5 9 L 1.6 9 C 1.4 8.4 1.8 7.8 2.2 7.4 C 2.2 5.4 1.6 3.4 1.8 1.6 C 2 0.8 2 0.2 1.6 -0.4 C 1 -2.8 0.6 -5.6 0.6 -9 Z',
+  blocks: 'M-6.4 -8.2 C-7.2 -5.8 -7.2 -3 -5.8 -0.8 C-5 -1.8 -4.6 -3.6 -4.6 -5.4 C-4.6 -6.6 -5.2 -7.6 -6.4 -8.2 Z M-4.1 -8.4 C-3.1 -6.8 -2.7 -4.6 -3.1 -2.6 C-3.3 -1.8 -3.7 -1.3 -4.1 -1 C-4.2 -2.6 -4.1 -4.8 -4.2 -6.4 C-4.2 -7.2 -4.2 -7.9 -4.1 -8.4 Z M-2 -3.6 C-1.4 -2.6 -1.4 -1.2 -2 -0.4 C-2.6 0 -3.4 -0.2 -3.6 -0.8 C-3.6 -2 -3 -3.2 -2 -3.6 Z M-1 -8.4 C-1 -6.6 -1.2 -5.2 -1.5 -4.2 C-2.4 -5.2 -2.8 -6.8 -2.9 -8.4 Z M-3.6 -0.3 C-3 -0.3 -2.6 0.1 -2.6 0.6 C-2.6 1.1 -3 1.5 -3.6 1.5 C-4.2 1.5 -4.6 1.1 -4.6 0.6 C-4.6 0.1 -4.2 -0.3 -3.6 -0.3 Z M-5.6 1.8 C-6.2 3 -6 4.4 -5.2 5.6 C-4.7 4.6 -4.5 3.2 -4.7 2.3 C-4.9 1.9 -5.2 1.7 -5.6 1.8 Z M-4 2 C-3.2 2.2 -2.6 2.6 -2.4 3.2 C-2.6 4.6 -3 6 -3.4 7 C-4 5.6 -4.2 3.6 -4 2 Z M 6.4 -8.2 C 7.2 -5.8 7.2 -3 5.8 -0.8 C 5 -1.8 4.6 -3.6 4.6 -5.4 C 4.6 -6.6 5.2 -7.6 6.4 -8.2 Z M 4.1 -8.4 C 3.1 -6.8 2.7 -4.6 3.1 -2.6 C 3.3 -1.8 3.7 -1.3 4.1 -1 C 4.2 -2.6 4.1 -4.8 4.2 -6.4 C 4.2 -7.2 4.2 -7.9 4.1 -8.4 Z M 2 -3.6 C 1.4 -2.6 1.4 -1.2 2 -0.4 C 2.6 0 3.4 -0.2 3.6 -0.8 C 3.6 -2 3 -3.2 2 -3.6 Z M 1 -8.4 C 1 -6.6 1.2 -5.2 1.5 -4.2 C 2.4 -5.2 2.8 -6.8 2.9 -8.4 Z M 3.6 -0.3 C 3 -0.3 2.6 0.1 2.6 0.6 C 2.6 1.1 3 1.5 3.6 1.5 C 4.2 1.5 4.6 1.1 4.6 0.6 C 4.6 0.1 4.2 -0.3 3.6 -0.3 Z M 5.6 1.8 C 6.2 3 6 4.4 5.2 5.6 C 4.7 4.6 4.5 3.2 4.7 2.3 C 4.9 1.9 5.2 1.7 5.6 1.8 Z M 4 2 C 3.2 2.2 2.6 2.6 2.4 3.2 C 2.6 4.6 3 6 3.4 7 C 4 5.6 4.2 3.6 4 2 Z',
 };
 
 /** Five motifs: arms (incl. shoulders), back, chest, abs and legs (incl. glutes, hamstrings, calves). */
@@ -421,6 +427,7 @@ export function RankEmblem({
   const sheen = `url(#rs${uid})`;
   const wing = tier >= 7 || tier === 5 ? WINGS.large : tier === 6 ? WINGS.demon : tier === 4 ? WINGS.medium : tier === 3 ? WINGS.small : null;
   const n = pips && level !== undefined ? (level % 3) + 1 : 0;
+  const icon = ICONS[muscle];
   const pair = (render: (t?: string) => ReactElement) => [undefined, M_MIRROR].map((t) => <g key={t ?? 'l'}>{render(t)}</g>);
   return (
     <svg className={`rank-emblem${top ? ' olymp' : ''}`} width={(size * 64) / 46} height={size} viewBox="0 0 64 46" aria-hidden>
@@ -462,10 +469,16 @@ export function RankEmblem({
       ))}
       <path d={HEX_INNER} style={{ fill }} stroke="rgba(0,0,0,0.3)" strokeWidth="0.6" />
       <path d={HEX_INNER} fill="#fff" fillOpacity="0.14" />
-      <g transform="translate(32 22) scale(1.18)">
-        <path d={ICONS[muscle].d} fill="#fff" />
-        <path d={ICONS[muscle].d} style={{ fill }} fillOpacity="0.22" stroke="rgba(0,0,0,0.5)" strokeWidth="0.9" strokeLinejoin="round" />
-        {ICONS[muscle].lines && <path d={ICONS[muscle].lines} fill="none" stroke="rgba(0,0,0,0.42)" strokeWidth="0.8" strokeLinecap="round" />}
+      <g transform={`translate(32 22) scale(${1.18 * (icon.scale ?? 1)})`}>
+        <path d={icon.d} fill="#fff" />
+        <path d={icon.d} style={{ fill }} fillOpacity={icon.blocks ? 0.45 : 0.22} stroke="rgba(0,0,0,0.5)" strokeWidth="0.9" strokeLinejoin="round" />
+        {icon.blocks && (
+          <>
+            <path d={icon.blocks} fill="#fff" stroke="rgba(0,0,0,0.45)" strokeWidth="0.6" strokeLinejoin="round" />
+            <path d={icon.blocks} style={{ fill }} fillOpacity="0.1" />
+          </>
+        )}
+        {icon.lines && <path d={icon.lines} fill="none" stroke="rgba(0,0,0,0.42)" strokeWidth="0.8" strokeLinecap="round" />}
       </g>
       {top && <path d={CROWN} style={{ fill }} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" strokeLinejoin="round" />}
       {Array.from({ length: n }, (_, i) => (

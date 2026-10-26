@@ -319,30 +319,64 @@ export function rankBackground(tier: number): string {
 // ---------------------------------------------------------------------------
 // Rank emblems: hexagon with a muscle symbol; wings and extras grow with the rank.
 
-/** Symbols in a ±7 box around the emblem centre. */
-const ICONS: Record<MuscleGroup | 'gesamt', string> = {
-  gesamt: (() => {
-    const pts: string[] = [];
-    for (let i = 0; i < 10; i++) {
-      const r = i % 2 ? 2.9 : 6.6;
-      const a = -Math.PI / 2 + (i * Math.PI) / 5;
-      pts.push(`${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a) + 0.4).toFixed(2)}`);
-    }
-    return `M${pts.join(' L')} Z`;
-  })(),
-  brust:
-    'M-0.7 -5 C-3.5 -5.6 -6.6 -4.8 -7 -2 C-7.4 1.2 -6 3.8 -3 4.6 C-1.8 4.9 -0.7 4.4 -0.7 3.4 Z M0.7 -5 C3.5 -5.6 6.6 -4.8 7 -2 C7.4 1.2 6 3.8 3 4.6 C1.8 4.9 0.7 4.4 0.7 3.4 Z',
-  ruecken: 'M-7 -5.5 C-4 -6.3 -1 -6.3 -0.6 -6.2 L-0.6 6.3 C-2 6.2 -3 6 -4 5.5 Z M7 -5.5 C4 -6.3 1 -6.3 0.6 -6.2 L0.6 6.3 C2 6.2 3 6 4 5.5 Z',
-  schultern: 'M-7.6 5 C-8 -1 -5 -5.6 -1.6 -5.6 L-1.6 -1.4 C-3 -1 -4 0 -4 1.4 L-4 5 Z M7.6 5 C8 -1 5 -5.6 1.6 -5.6 L1.6 -1.4 C3 -1 4 0 4 1.4 L4 5 Z',
-  bizeps: 'M-6.5 5.5 L-6.5 0.5 C-6.5 -2.6 -4.4 -3.8 -2.2 -3.2 L0.8 -2.4 C1.6 -4.4 0.8 -6.4 2.4 -7 C4.6 -7.6 5.8 -5.4 5.4 -3.2 C5.1 -1.2 4 0.6 1.8 1.6 C4.4 2.2 6.2 3.6 6.4 5.5 Z',
-  trizeps: 'M-5.2 -6.4 L-2 -6.4 L-2 1 C-2 3.2 2 3.2 2 1 L2 -6.4 L5.2 -6.4 L5.2 1.4 C5.2 6 -5.2 6 -5.2 1.4 Z',
-  core:
-    'M-4.8 -6.2 h3.8 v3.4 h-3.8 Z M1 -6.2 h3.8 v3.4 h-3.8 Z M-4.8 -1.7 h3.8 v3.4 h-3.8 Z M1 -1.7 h3.8 v3.4 h-3.8 Z M-4.4 2.8 h3.4 v3.6 C-2.6 6.4 -4 5.4 -4.4 2.8 Z M1 2.8 h3.4 C4 5.4 2.6 6.4 1 6.4 Z',
-  beine: 'M-5.6 -6.6 L-0.6 -6.6 L-0.6 6.6 L-3 6.6 C-4.6 3 -6 -1 -5.6 -6.6 Z M5.6 -6.6 L0.6 -6.6 L0.6 6.6 L3 6.6 C4.6 3 6 -1 5.6 -6.6 Z',
-  po: 'M-0.6 -4.5 C-4.5 -5.2 -7.2 -2.6 -6.8 0.8 C-6.4 4 -3.6 5.6 -0.6 4.8 Z M0.6 -4.5 C4.5 -5.2 7.2 -2.6 6.8 0.8 C6.4 4 3.6 5.6 0.6 4.8 Z',
-  beinbeuger: 'M-5 -6.6 L-0.8 -6.6 L-1.4 6.6 L-3.8 6.6 C-5.2 2.4 -5.6 -2 -5 -6.6 Z M5 -6.6 L0.8 -6.6 L1.4 6.6 L3.8 6.6 C5.2 2.4 5.6 -2 5 -6.6 Z',
-  waden: 'M-2.6 -7 L2 -7 C4.6 -3 4.9 0.6 2.6 3.2 L1.6 7 L-1.6 7 L-1.6 2.2 C-3.6 -1 -3.6 -4 -2.6 -7 Z',
-  cardio: 'M0 6 C-8 0 -7 -6 -3.5 -6 C-1.8 -6 -0.6 -5 0 -3.6 C0.6 -5 1.8 -6 3.5 -6 C7 -6 8 0 0 6 Z',
+/** Symbols in a ±9 box around the emblem centre: white shape, detail lines in the rank color, white motion strokes. */
+interface EmblemIcon {
+  d: string;
+  lines?: string;
+  strokes?: string;
+}
+
+const ICONS: Record<MuscleGroup | 'gesamt', EmblemIcon> = {
+  gesamt: {
+    d: (() => {
+      const pts: string[] = [];
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 ? 2.9 : 6.6;
+        const a = -Math.PI / 2 + (i * Math.PI) / 5;
+        pts.push(`${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a) + 0.4).toFixed(2)}`);
+      }
+      return `M${pts.join(' L')} Z`;
+    })(),
+  },
+  brust: {
+    d: 'M-8.2 -4.6 C-6.4 -7.2 -3.2 -7.6 -0.7 -6.8 L-0.7 3.4 C-2.6 5.2 -5.8 5.2 -7.6 3.2 C-8.8 1.6 -9 -2.2 -8.2 -4.6 Z M8.2 -4.6 C6.4 -7.2 3.2 -7.6 0.7 -6.8 L0.7 3.4 C2.6 5.2 5.8 5.2 7.6 3.2 C8.8 1.6 9 -2.2 8.2 -4.6 Z',
+    lines: 'M-7.6 -1.4 C-5.4 -2.2 -3 -2.4 -0.7 -2 M7.6 -1.4 C5.4 -2.2 3 -2.4 0.7 -2',
+  },
+  ruecken: {
+    d: 'M-8.4 -6.2 C-6 -7.8 -3 -8.2 0 -8.2 C3 -8.2 6 -7.8 8.4 -6.2 C7.8 -2.8 5.6 1 3.2 3.6 L2.6 8.2 L-2.6 8.2 L-3.2 3.6 C-5.6 1 -7.8 -2.8 -8.4 -6.2 Z',
+    lines: 'M0 -7.4 L0 7.4 M-6.8 -4.8 C-4.6 -2.6 -2.6 0.6 -1.4 4.6 M6.8 -4.8 C4.6 -2.6 2.6 0.6 1.4 4.6 M-3.2 -8 C-2.2 -6.2 -1 -5 0 -4.4 C1 -5 2.2 -6.2 3.2 -8',
+  },
+  schultern: {
+    d: 'M-4.2 -6.6 C-1.6 -7.6 1.6 -7.6 4.2 -6.6 L3.8 8.4 L-3.8 8.4 Z M-9.1 -1.6 A3.5 3.5 0 1 1 -2.1 -1.6 A3.5 3.5 0 1 1 -9.1 -1.6 Z M2.1 -1.6 A3.5 3.5 0 1 1 9.1 -1.6 A3.5 3.5 0 1 1 2.1 -1.6 Z M-1.7 -8.8 L1.7 -8.8 L1.7 -6.6 L-1.7 -6.6 Z',
+    lines: 'M-2.1 -1.6 A3.5 3.5 0 0 1 -5.6 1.9 M2.1 -1.6 A3.5 3.5 0 0 0 5.6 1.9 M-3.6 4 L3.6 4',
+  },
+  bizeps: {
+    d: 'M-8 6.5 L4 6.5 C6.6 6.5 8 4.8 7.8 2.4 L7.2 -3 C8.2 -3.6 8.4 -5.2 7.6 -6.4 C6.8 -7.8 4.6 -8.4 3 -7.6 C1.8 -7 1.6 -5.6 2.2 -4.4 L2.6 -1.2 C1.6 -3.8 -1.8 -5.2 -4.4 -3.4 C-6 -2.4 -7 -0.6 -8 0.6 Z',
+    lines: 'M2.6 -1.2 C1.2 0.6 -1 1.2 -3.6 0.8 M3 -7.6 C4 -6.6 4.4 -5.4 4.2 -4.2',
+  },
+  trizeps: {
+    d: 'M-5.4 -8.4 C-2 -9.4 3 -9 5.6 -7.4 C6.6 -3.4 6 2 4.4 6.4 C3.6 8 2 8.8 0 8.8 C-2 8.8 -3.6 8 -4.4 6.4 C-6 2 -6.6 -3.4 -5.4 -8.4 Z',
+    lines: 'M-3 -3.4 L-3 2.4 C-3 5.6 3 5.6 3 2.4 L3 -3.4 M0 -8.4 L0 -3',
+  },
+  beine: {
+    d: 'M-3.8 -8.6 L1.6 -8.8 C4.2 -7.4 6.4 -4.8 7 -2.2 C7.6 -1.4 7.2 -0.4 6.2 0.2 C4.6 1.6 2.4 3.8 1.4 5.2 C3.6 5.4 6.6 5.6 7.6 6.6 C8.6 7.2 8.4 8.4 7.4 8.6 L-1.8 8.6 C-2.8 8.2 -2.6 6.4 -1.6 5.8 C-1.6 3.4 -0.6 0.8 2.6 -0.8 C0.4 -1.8 -2.6 -3.4 -3.6 -5.2 C-4.6 -6.2 -4.6 -7.8 -3.8 -8.6 Z',
+    lines: 'M1.4 5.2 C0.4 6 -0.8 6.2 -1.8 6',
+    strokes: 'M-9.4 -2 L-5.8 -2 M-9.8 1.4 L-4.6 1.4 M-9.4 4.8 L-5.2 4.8',
+  },
+  po: {
+    d: 'M-7.8 -6.4 C-5 -8 5 -8 7.8 -6.4 C8.8 -1.4 8.2 3.4 6.2 7.4 L1.2 7.4 L0 5 L-1.2 7.4 L-6.2 7.4 C-8.2 3.4 -8.8 -1.4 -7.8 -6.4 Z',
+    lines: 'M0 -6.6 L0 4.4 M-7 2.4 C-4.8 4.4 -2.2 4.6 -0.4 3 M7 2.4 C4.8 4.4 2.2 4.6 0.4 3',
+  },
+  beinbeuger: {
+    d: 'M-5.8 -8.2 L5.8 -8.2 C6.4 -3 5.6 2 3.8 6 C3.2 7.6 1.8 8.6 0 8.6 C-1.8 8.6 -3.2 7.6 -3.8 6 C-5.6 2 -6.4 -3 -5.8 -8.2 Z',
+    lines: 'M0 -7.4 L0 4.6 M-3.6 5.6 C-1.6 4.2 1.6 4.2 3.6 5.6',
+  },
+  waden: {
+    d: 'M-3.4 -8.4 L2.4 -8.4 C5 -5 5.4 -1.2 3.4 2 L2.6 5 C4.4 5.4 6.6 6 7.2 7.2 C7.4 8 6.8 8.4 6 8.4 L-2.8 8.4 C-3.4 8.4 -3.6 7.8 -3.4 7 L-2.6 2 C-4.4 -1.4 -4.6 -4.8 -3.4 -8.4 Z',
+    lines: 'M-0.4 -7 C1.6 -4.4 1.8 -1.2 0.8 1.6',
+  },
+  core: { d: 'M-4.8 -6.2 h3.8 v3.4 h-3.8 Z M1 -6.2 h3.8 v3.4 h-3.8 Z M-4.8 -1.7 h3.8 v3.4 h-3.8 Z M1 -1.7 h3.8 v3.4 h-3.8 Z M-4.4 2.8 h3.4 v3.6 C-2.6 6.4 -4 5.4 -4.4 2.8 Z M1 2.8 h3.4 C4 5.4 2.6 6.4 1 6.4 Z' },
+  cardio: { d: 'M0 6 C-8 0 -7 -6 -3.5 -6 C-1.8 -6 -0.6 -5 0 -3.6 C0.6 -5 1.8 -6 3.5 -6 C7 -6 8 0 0 6 Z' },
 };
 
 const HEX = 'M32 5.5 L46.3 13.75 L46.3 30.25 L32 38.5 L17.7 30.25 L17.7 13.75 Z';
@@ -425,7 +459,11 @@ export function RankEmblem({
       <path d={HEX} style={{ fill }} stroke="rgba(0,0,0,0.35)" strokeWidth="0.9" />
       <path d={HEX} fill={sheen} />
       <path d={HEX_INNER} fill="#fff" fillOpacity="0.2" stroke="#fff" strokeOpacity="0.5" strokeWidth="0.8" />
-      <path d={ICONS[muscle]} transform="translate(32 22) scale(1.22)" fill="#fff" fillOpacity="0.96" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
+      <g transform="translate(32 22) scale(1.22)">
+        <path d={ICONS[muscle].d} fill="#fff" fillOpacity="0.96" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
+        {ICONS[muscle].lines && <path d={ICONS[muscle].lines} fill="none" style={{ stroke: fill }} strokeWidth="0.9" strokeLinecap="round" />}
+        {ICONS[muscle].strokes && <path d={ICONS[muscle].strokes} fill="none" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" />}
+      </g>
       {top && <path d={CROWN} style={{ fill }} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" strokeLinejoin="round" />}
       {Array.from({ length: n }, (_, i) => (
         <circle key={i} cx={32 + (i - (n - 1) / 2) * 2.5} cy="40" r="0.95" fill="#fff" />

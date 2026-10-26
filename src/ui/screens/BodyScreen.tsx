@@ -5,7 +5,8 @@ import type { MuscleGroup } from '../../domain/types';
 import { formatKg } from '../../domain/workoutLog';
 import { daysBetween, formatShort, relativeDays } from '../../lib/dates';
 import { useStore } from '../../lib/store';
-import { BodyFigure, levelColor, RankBadge, rankBackground, rankFill } from '../bodyFigure';
+import { BodyFigure, levelColor, rankBackground, RankEmblem, rankFill, RankLadder, RankRings } from '../bodyFigure';
+import { RankCalculator } from '../rankCalculator';
 import { Card, Segmented } from '../components';
 import { useNav } from '../nav';
 
@@ -52,6 +53,7 @@ function nextText(m: MuscleStatus): string | undefined {
 export default function BodyScreen() {
   const { data, settings, updateSettings } = useStore();
   const { go } = useNav();
+  const [page, setPage] = useState<'koerper' | 'rechner'>('koerper');
   const [mode, setMode] = useState<Mode>('last');
   const [selected, setSelected] = useState<MuscleGroup | null>(null);
   const [weightDraft, setWeightDraft] = useState<string | null>(null);
@@ -84,8 +86,33 @@ export default function BodyScreen() {
     void updateSettings((s) => ({ ...s, training: { ...s.training, bodyWeightKg: v.trim() && n >= 30 && n <= 250 ? Math.round(n * 10) / 10 : null } }));
   };
 
+  const tabs = (
+    <div className="page-tabs" role="tablist">
+      {(
+        [
+          ['koerper', 'Körperbild'],
+          ['rechner', 'Rang-Rechner'],
+        ] as const
+      ).map(([id, label]) => (
+        <button key={id} role="tab" aria-selected={page === id} className={page === id ? 'on' : ''} onClick={() => setPage(id)}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (page === 'rechner') {
+    return (
+      <>
+        {tabs}
+        <RankCalculator body={body} />
+      </>
+    );
+  }
+
   return (
     <>
+      {tabs}
       <Card className="body-hero">
         <Segmented
           value={mode}
@@ -118,17 +145,23 @@ export default function BodyScreen() {
       <Card title="Gesamt-Rang" icon="🏅">
         {body.overall ? (
           <>
-            <div className="row" style={{ alignItems: 'center' }}>
-              <span style={{ fontSize: 22 }}>
-                <RankBadge tier={body.overall.tier} level={body.overall.level} name={body.overall.name} size={30} />
-              </span>
-              <span className="grow" />
-              <span className="small muted">{body.trainedCount}/10 Muskeln</span>
+            <div className="rank-hero">
+              <RankEmblem tier={body.overall.tier} level={body.overall.level} size={72} />
+              <div>
+                <div className="name">{body.overall.name}</div>
+                <div className="small muted">
+                  {Math.round(body.overall.score * 100)} Punkte · {body.trainedCount}/10 Muskeln
+                </div>
+              </div>
             </div>
-            <div className="meter" style={{ marginTop: 10 }} aria-label={`${Math.round(body.overall.progress * 100)} % bis zum nächsten Rang`}>
-              <div style={{ width: `${Math.round(body.overall.progress * 100)}%`, background: rankBackground(body.overall.tier) }} />
+            <div className="rank-bar" style={{ ['--bar' as string]: rankBackground(body.overall.tier) }} aria-label={`${Math.round(body.overall.progress * 100)} % bis zum nächsten Rang`}>
+              <div style={{ width: `${Math.round(body.overall.progress * 100)}%` }} />
             </div>
-            <p className="tiny muted">Durchschnitt aller 10 Muskelgruppen – untrainierte zählen mit null. Wer alles trainiert, steigt schneller auf.</p>
+            <RankRings
+              items={body.muscles.map((m) => ({ muscle: m.muscle, label: `${MUSCLE_LABEL[m.muscle]}: ${m.rank?.name ?? 'kein Rang'}`, tier: m.rank?.tier ?? null }))}
+            />
+            <p className="tiny muted">Ein Kreis pro Muskelgruppe in ihrer Rangfarbe. Der Gesamt-Rang ist der Durchschnitt aller 10 – untrainierte zählen mit null.</p>
+            <RankLadder tier={body.overall.tier} />
           </>
         ) : (
           <p className="small muted" style={{ marginTop: 0 }}>
@@ -185,25 +218,32 @@ export default function BodyScreen() {
           {body.muscles.map((m) => (
             <li key={m.muscle}>
               <button
-                className="muscle-row"
+                className="muscle-row muscle-rank"
                 onClick={() => {
                   setSelected(m.muscle);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
-                <div className="row between">
-                  <span className="strong">{MUSCLE_LABEL[m.muscle]}</span>
-                  {m.rank ? <RankBadge tier={m.rank.tier} level={m.rank.level} name={m.rank.name} size={16} /> : <span className="small muted">kein Rang</span>}
-                </div>
-                {m.rank && (
-                  <div className="meter" style={{ margin: '6px 0 4px' }}>
-                    <div style={{ width: `${Math.round(m.rank.progress * 100)}%`, background: rankBackground(m.rank.tier) }} />
+                <div>
+                  <div className="row between">
+                    <span className="strong">{MUSCLE_LABEL[m.muscle]}</span>
+                    <span className="small muted">{m.rank ? m.rank.name : 'kein Rang'}</span>
                   </div>
-                )}
-                <div className="tiny muted">
-                  {m.best ? `${bestText(m)} · ` : ''}
-                  {m.weeklySets.toLocaleString('de-DE')} Sätze/Woche · {loadText(m)}
+                  <div className="rank-bar" style={{ ['--bar' as string]: m.rank ? rankBackground(m.rank.tier) : 'var(--muted)' }}>
+                    <div style={{ width: `${m.rank ? Math.round(m.rank.progress * 100) : 0}%` }} />
+                  </div>
+                  <div className="tiny muted">
+                    {m.best ? `${bestText(m)} · ` : ''}
+                    {m.weeklySets.toLocaleString('de-DE')} Sätze/Woche · {loadText(m)}
+                  </div>
                 </div>
+                {m.rank ? (
+                  <RankEmblem tier={m.rank.tier} level={m.rank.level} muscle={m.muscle} size={52} />
+                ) : (
+                  <span style={{ opacity: 0.35, filter: 'grayscale(1)' }}>
+                    <RankEmblem tier={0} muscle={m.muscle} size={52} pips={false} />
+                  </span>
+                )}
               </button>
             </li>
           ))}
@@ -233,12 +273,17 @@ function MuscleDetail({ m, onClose }: { m: MuscleStatus; onClose: () => void }) 
     >
       {m.rank ? (
         <>
-          <div className="row between">
-            <RankBadge tier={m.rank.tier} level={m.rank.level} name={m.rank.name} size={24} />
-            <span className="small muted">{m.next ? `${Math.round(m.rank.progress * 100)} % zu ${m.next.name}` : 'höchster Rang'}</span>
+          <div className="rank-hero" style={{ justifyContent: 'flex-start' }}>
+            <RankEmblem tier={m.rank.tier} level={m.rank.level} muscle={m.muscle} size={60} />
+            <div>
+              <div className="name" style={{ fontSize: 20 }}>
+                {m.rank.name}
+              </div>
+              <div className="small muted">{m.next ? `${Math.round(m.rank.progress * 100)} % zu ${m.next.name}` : 'höchster Rang'}</div>
+            </div>
           </div>
-          <div className="meter" style={{ margin: '8px 0' }}>
-            <div style={{ width: `${Math.round(m.rank.progress * 100)}%`, background: rankBackground(m.rank.tier) }} />
+          <div className="rank-bar" style={{ ['--bar' as string]: rankBackground(m.rank.tier) }}>
+            <div style={{ width: `${Math.round(m.rank.progress * 100)}%` }} />
           </div>
           <div className="small">
             <strong>Beste Leistung:</strong> {bestText(m)}

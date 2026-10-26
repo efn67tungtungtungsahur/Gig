@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeBodyMuscles, findExercise, rankFromScore, scoreSet } from '../src/domain/body';
+import { analyzeBodyMuscles, findExercise, rankFromScore, rankResult, RANKABLE, scoreSet } from '../src/domain/body';
 import { defaultSettings, emptyData } from '../src/domain/defaults';
 import { EXERCISES } from '../src/domain/exercises';
 import type { LoggedWorkout } from '../src/domain/types';
@@ -98,6 +98,21 @@ describe('muscle ranks', () => {
     expect(a.bodyWeightSource).toBe('schaetzung');
     expect(a.muscles.find((m) => m.muscle === 'ruecken')!.best?.exercise.id).toBe('kreuzheben');
     expect(a.muscles.find((m) => m.muscle === 'po')!.best?.secondary).toBe(true);
+  });
+
+  it('rank calculator results count for ranks but not for load', () => {
+    const now = new Date(2026, 9, 26, 12);
+    const data = emptyData();
+    data.rankTests = [{ id: 't1', date: new Date(2026, 9, 26, 11).toISOString(), exerciseId: 'klimmzuege', weight: 0, reps: 13 }];
+    const a = analyzeBodyMuscles(data, { ...defaultSettings(now), training: { ...defaultSettings(now).training, bodyWeightKg: 80 } }, now);
+    const ruecken = a.muscles.find((m) => m.muscle === 'ruecken')!;
+    expect(ruecken.rank?.name).toBe('Platin III');
+    expect(ruecken.load).toBe(0);
+    expect(ruecken.weeklySets).toBe(0);
+    expect(ruecken.lastTrained).toBeUndefined();
+    const r = rankResult(EXERCISES.find((e) => e.id === 'klimmzuege')!, 0, 13, 80, 'm')!;
+    expect(r.muscles.map((m) => [m.muscle, m.secondary])).toEqual([['ruecken', false], ['bizeps', true]]);
+    expect(RANKABLE.length).toBeGreaterThan(40);
   });
 
   it('gives the demo a plausible body overview', () => {

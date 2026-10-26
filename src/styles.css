@@ -948,28 +948,29 @@ textarea.input {
 
 /* Körperübersicht */
 .body-hero {
-  /* Dark stage in both themes so the colors glow */
+  /* Dark navy stage in both themes; the figure itself is light */
   color-scheme: dark;
-  --surface: #161618;
-  --surface-2: #262624;
+  --surface: #17162a;
+  --surface-2: #24233a;
   --border: rgba(255, 255, 255, 0.1);
   --text: #f0efec;
   --text-2: #c3c2b7;
-  --muted: #898781;
-  --accent: #3987e5;
-  --lvl-1: #184f95;
-  --lvl-2: #2a78d6;
-  --lvl-3: #5598e7;
-  --lvl-4: #86b6ef;
-  --lvl-5: #cde2fb;
-  --rank-1: #8a5c3a;
-  --rank-2: #e98d42;
-  --rank-3: #b9c4d2;
-  --rank-4: #f2c230;
-  --rank-5: #2fc0a8;
-  --rank-6: #3d8bfd;
-  --rank-7: #ef4f7d;
-  --rank-8: #b06cff;
+  --muted: #8f8da3;
+  --accent: #4aa3ff;
+  /* Muscles sit on light skin, so the light-surface ramps apply */
+  --lvl-1: #86b6ef;
+  --lvl-2: #5598e7;
+  --lvl-3: #256abf;
+  --lvl-4: #184f95;
+  --lvl-5: #0d366b;
+  --rank-1: #8b5a34;
+  --rank-2: #d9772b;
+  --rank-3: #5d79a6;
+  --rank-4: #e3a400;
+  --rank-5: #12a690;
+  --rank-6: #3a7ff0;
+  --rank-7: #e23a72;
+  --rank-8: #a855f7;
   --rank-8-bg: linear-gradient(120deg, #ffd34d, #ff5fa2 38%, #b06cff 68%, #3fd8ff);
   /* Energy: pale yellow = needs rest … deep yellow = ready (validated ordinal ramp) */
   --energy-1: #f5efd7;
@@ -977,15 +978,16 @@ textarea.input {
   --energy-3: #ebc23e;
   --energy-4: #dfa30a;
   --energy-5: #c48600;
-  --fig-skin: #2c2c2a;
-  --fig-muscle: #403f3c;
-  --fig-edge: #0b0b0c;
+  --fig-skin: #dfe1ea;
+  --fig-hair: #b3b7c7;
+  --fig-face: #3a3e4f;
+  --fig-muscle: #a3a7b6;
   color: var(--text);
 }
 .card.body-hero,
 .body-hero.mini {
-  background: radial-gradient(120% 80% at 50% 28%, #24282f 0%, #161618 55%, #0f0f10 100%);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: radial-gradient(120% 80% at 50% 30%, #1f1d38 0%, #14132a 55%, #0e0d1c 100%);
+  border-color: rgba(255, 255, 255, 0.07);
 }
 .body-hero.mini {
   border-radius: 14px;
@@ -994,12 +996,12 @@ textarea.input {
 .body-figures {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  max-width: 380px;
+  gap: 6px;
+  max-width: 400px;
   margin: 0 auto;
 }
 .body-figures.compact {
-  gap: 2px;
+  gap: 0;
 }
 .body-figures figure {
   margin: 0;
@@ -1025,13 +1027,28 @@ textarea.input {
 }
 .fig-skin {
   fill: var(--fig-skin);
-  stroke: var(--fig-edge);
-  stroke-width: 1.4;
-  stroke-linejoin: round;
+}
+.fig-finger {
+  fill: none;
+  stroke: var(--fig-skin);
+  stroke-width: 4.2;
+  stroke-linecap: round;
+}
+.fig-hair {
+  fill: var(--fig-hair);
+}
+.fig-face {
+  fill: var(--fig-face);
+}
+.fig-mouth {
+  fill: none;
+  stroke: var(--fig-face);
+  stroke-width: 2.2;
+  stroke-linecap: round;
 }
 .fig-muscle {
-  stroke: var(--fig-edge);
-  stroke-width: 1.1;
+  stroke: var(--fig-skin);
+  stroke-width: 2;
   stroke-linejoin: round;
 }
 .fig-muscle.tap {
@@ -1039,15 +1056,15 @@ textarea.input {
 }
 .fig-line {
   fill: none;
-  stroke: var(--fig-edge);
-  stroke-width: 0.9;
+  stroke: var(--fig-skin);
+  stroke-width: 1.1;
   stroke-linecap: round;
-  opacity: 0.6;
+  opacity: 0.75;
 }
 .fig-selected {
   fill: none;
-  stroke: #fff;
-  stroke-width: 1.8;
+  stroke: var(--accent);
+  stroke-width: 2.6;
   stroke-linejoin: round;
 }
 .fig-muscle.hot {
@@ -1055,13 +1072,138 @@ textarea.input {
 }
 @keyframes muscle-pulse {
   50% {
-    opacity: 0.68;
+    opacity: 0.6;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .fig-muscle.hot {
     animation: none;
   }
+}
+.body-hero .lvl-legend i {
+  box-shadow: 0 0 0 2px var(--fig-skin);
+}
+.page-tabs {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--border);
+  margin: -4px 0 12px;
+}
+.page-tabs button {
+  background: none;
+  border: 0;
+  padding: 8px 0 10px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.page-tabs button.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.rank-emblem {
+  flex: none;
+  overflow: visible;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.3));
+}
+.rank-emblem.olymp {
+  filter: drop-shadow(0 0 3px rgba(176, 108, 255, 0.75)) drop-shadow(0 0 7px rgba(255, 95, 162, 0.35));
+}
+.rank-ladder {
+  position: relative;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+}
+.rank-step {
+  flex: 0 0 auto;
+  width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.55;
+}
+.rank-step.current {
+  opacity: 1;
+}
+.rank-arrow {
+  height: 18px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.rank-step-name {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text-2);
+}
+.rank-step.current .rank-step-name {
+  color: var(--text);
+}
+.rank-rings {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.rank-ring {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ring);
+  padding: 3px;
+  flex: none;
+}
+.rank-ring::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2.5px solid var(--surface-2);
+  background: var(--ring);
+  box-sizing: border-box;
+}
+.rank-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px 0 12px;
+}
+.rank-hero .name {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.muscle-rank {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.rank-bar {
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bar) 22%, var(--surface-2));
+  margin: 6px 0 4px;
+}
+.rank-bar > div {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--bar);
 }
 .lvl-legend {
   display: flex;
@@ -1090,13 +1232,7 @@ textarea.input {
   font-weight: 650;
   white-space: nowrap;
 }
-.rank-badge svg {
-  flex: none;
-  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.25));
-}
-.rank-badge.olymp svg {
-  filter: drop-shadow(0 0 3px rgba(176, 108, 255, 0.75)) drop-shadow(0 0 6px rgba(255, 95, 162, 0.35));
-}
+
 .meter {
   height: 6px;
   border-radius: 3px;
@@ -1117,4 +1253,126 @@ textarea.input {
   color: inherit;
   cursor: pointer;
   font: inherit;
+}
+
+/* Rang-Rechner */
+.calc-carousel {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+}
+.calc-carousel .icon-btn {
+  font-size: 28px;
+  color: var(--accent);
+  background: none;
+}
+.calc-side {
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1.2;
+}
+.calc-current {
+  text-align: center;
+  min-width: 128px;
+}
+.calc-name {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.calc-outline {
+  margin-top: 12px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+}
+.calc-value {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.calc-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.calc-number {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 110px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.calc-number small {
+  font-size: 15px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+.ruler {
+  position: relative;
+  margin: 8px -16px 0;
+}
+.ruler-needle {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 3px;
+  height: 46px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--accent);
+  z-index: 1;
+  pointer-events: none;
+}
+.ruler-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+.ruler-track::-webkit-scrollbar {
+  display: none;
+}
+.ruler-tick {
+  position: relative;
+  height: 62px;
+  scroll-snap-align: center;
+}
+.ruler-tick i {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  width: 1.5px;
+  height: 18px;
+  margin-left: -0.75px;
+  background: var(--muted);
+  opacity: 0.7;
+}
+.ruler-tick.major i {
+  top: 6px;
+  height: 30px;
+  opacity: 1;
+}
+.ruler-tick span {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
 }

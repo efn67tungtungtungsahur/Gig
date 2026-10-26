@@ -106,6 +106,7 @@ export function emptyData(): AppData {
     trainingLog: {},
     workoutLog: [],
     activeWorkout: null,
+    rankTests: [],
   };
 }
 
@@ -146,5 +147,6 @@ export function mergeData(stored: Partial<AppData> | null | undefined): AppData 
     trainingLog: { ...rest.trainingLog },
     workoutLog: rest.workoutLog ?? [],
     activeWorkout: rest.activeWorkout ?? null,
+    rankTests: rest.rankTests ?? [],
   };
 }

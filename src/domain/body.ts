@@ -145,6 +145,14 @@ const STANDARDS: Record<string, Standard> = {
   ab_wheel: REPS(2, 6, 14, 24, 35),
 };
 
+/** Catalogue exercises that have a strength standard (usable in the rank calculator). */
+export const RANKABLE: Exercise[] = EXERCISES.filter((e) => STANDARDS[e.id]);
+
+/** 'ratio' = weight × reps, 'reps' = body-weight exercise counted by reps. */
+export function standardKind(ex: Exercise): 'ratio' | 'reps' | undefined {
+  return STANDARDS[ex.id]?.kind;
+}
+
 /** Rough factors for the female standards (upper body / lower body). */
 const FEMALE = { ratio: [0.6, 0.72], reps: [0.5, 0.75] };
 
@@ -307,7 +315,7 @@ export interface Performance {
   exercise: Exercise;
   weight: number;
   reps: number;
-  /** Number of sets this entry stands for (Liftoff only reports the best set). */
+  /** Number of sets this entry stands for (Liftoff only reports the best set; 0 = rank calculator). */
   sets: number;
 }
 
@@ -333,6 +341,10 @@ export function collectPerformances(data: AppData): Performance[] {
       if (!ex) continue;
       out.push({ date: w.start, exercise: ex, weight: e.bestWeight ?? 0, reps: e.reps ?? 0, sets: Math.max(1, e.sets) });
     }
+  }
+  for (const t of data.rankTests ?? []) {
+    const ex = BY_ID.get(t.exerciseId);
+    if (ex) out.push({ date: t.date, exercise: ex, weight: t.weight, reps: t.reps, sets: 0 });
   }
   return out;
 }
@@ -434,6 +446,18 @@ function nextGoal(best: BestLift, rank: RankInfo, bodyWeight: number, sex: 'm' |
   return { level: rank.level + 1, name: levelName(rank.level + 1), exercise: best.exercise, reps: Math.max(Math.ceil(needed), best.reps + 1) };
 }
 
+/** Rank a single result for the calculator: main muscle and the secondary ones (70 %). */
+export function rankResult(ex: Exercise, weight: number, reps: number, bodyWeight: number, sex: 'm' | 'w') {
+  const s = scoreSet(ex, weight, reps, bodyWeight, sex);
+  if (!s) return undefined;
+  return {
+    ...s,
+    muscles: ex.muscles
+      .filter((m) => BODY_MUSCLES.includes(m))
+      .map((m, i) => ({ muscle: m, secondary: i > 0, rank: rankFromScore(i === 0 ? s.score : s.score * SECONDARY_FACTOR) })),
+  };
+}
+
 export function analyzeBodyMuscles(data: AppData, settings: Settings, now = new Date()): BodyAnalysis {
   const { kg: bodyWeight, source } = bodyWeightFor(data, settings);
   const sex = settings.training.rankStandard;
@@ -453,7 +477,7 @@ export function analyzeBodyMuscles(data: AppData, settings: Settings, now = new 
       const t = new Date(p.date).getTime();
       if (t > nowMs) continue;
       const credit = role === 0 ? 1 : 0.5;
-      if (!last || p.date > last) last = p.date;
+      if (p.sets > 0 && (!last || p.date > last)) last = p.date;
       if (t >= weekFrom) weekly += credit * p.sets;
       const hours = (nowMs - t) / 3_600_000;
       if (hours < 7 * 24) load += credit * p.sets * 0.5 ** (hours / HALF_LIFE_H);

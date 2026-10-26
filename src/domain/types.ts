@@ -242,6 +242,15 @@ export interface LoggedWorkout {
   note?: string;
 }
 
+/** A result entered in the rank calculator (counts for the ranks, not for load). */
+export interface RankTest {
+  id: string;
+  date: string; // ISO
+  exerciseId: string;
+  weight: number; // kg (extra weight for body-weight exercises)
+  reps: number;
+}
+
 /** Manual status of a planned training (calendar event id → status). Abgesagt = counts neither way. */
 export type TrainingLog = Record<string, 'done' | 'missed' | 'skipped'>;
 
@@ -258,6 +267,8 @@ export interface AppData {
   workoutLog: LoggedWorkout[];
   /** The workout currently being recorded (survives closing the app). */
   activeWorkout: LoggedWorkout | null;
+  /** Saved rank calculator results. */
+  rankTests: RankTest[];
 }
 
 export type TrainingGoal = 'muskelaufbau' | 'kraft' | 'ausdauer' | 'fitness';

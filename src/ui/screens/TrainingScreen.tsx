@@ -7,8 +7,12 @@ import { signed } from '../../domain/report';
 import type { LiftoffSnapshot, MuscleGroup } from '../../domain/types';
 import { formatDate, formatShort, formatTime } from '../../lib/dates';
 import { useStore } from '../../lib/store';
-import { takePhoto, pickImages } from '../../integrations/camera';
-import { readLiftoffScreenshots, scanGym, type ImageInput } from '../../integrations/claude';
+import { parseLiftoffText, type LiftoffDraft } from '../../domain/ocrParse';
+import type { Detection } from '../../domain/visionLabels';
+import { pickImages, takePhoto, type ImageInput } from '../../integrations/camera';
+import { readScreenshots } from '../../integrations/ocr';
+import { scanRoom } from '../../integrations/vision';
+import type { VisionProgress } from '../../integrations/visionEngine';
 import { Card, Empty, Sheet, Stat, toast, useAction } from '../components';
 import { IconCamera } from '../icons';
 import { useNav } from '../nav';
@@ -28,7 +32,9 @@ export default function TrainingScreen() {
   const { busy, run } = useAction();
   const [previews, setPreviews] = useState<string[]>([]);
   const [editOpen, setEditOpen] = useState(false);
-  const [manualOpen, setManualOpen] = useState(false);
+  const [progress, setProgress] = useState<VisionProgress | null>(null);
+  const [review, setReview] = useState<Detection[] | null>(null);
+  const [liftoffDraft, setLiftoffDraft] = useState<{ draft?: LiftoffDraft; version: number } | null>(null);
   const trainings = upcoming(report.events, new Date(), ['training'], 14);
   const [selected, setSelected] = useState<string | 'frei'>(trainings[0]?.id ?? 'frei');
   const [freeFocus, setFreeFocus] = useState(0);
@@ -54,27 +60,40 @@ export default function TrainingScreen() {
     return false;
   };
 
-  const scan = () =>
+  const scan = (source: 'kamera' | 'galerie') =>
     run('scan', async () => {
       if (guardDemo()) return;
-      const shot = await takePhoto();
-      if (!shot) return;
-      setPreviews((p) => [...p, shot.preview]);
-      const res = await scanGym(settings.anthropicApiKey, [shot.image]);
-      await updateData((d) => {
-        const merged = [...new Set([...d.gym.equipment, ...res.equipment])];
-        return {
-          ...d,
-          gym: {
-            equipment: merged,
-            scannedAt: new Date().toISOString(),
-            notes: [res.room_description, res.other_equipment.length ? `Außerdem: ${res.other_equipment.join(', ')}` : ''].filter(Boolean).join(' '),
-            photosScanned: d.gym.photosScanned + 1,
-          },
-        };
-      });
-      toast(res.equipment.length ? `${res.equipment.length} Geräte erkannt. Tipp: Fotografiere auch die anderen Ecken.` : 'Keine bekannten Geräte erkannt.');
+      let images: ImageInput[] = [];
+      if (source === 'kamera') {
+        const shot = await takePhoto();
+        if (shot) images = [shot.image];
+      } else {
+        images = await pickImages(4);
+      }
+      if (!images.length) return;
+      setPreviews((p) => [...p, ...images.map((i) => `data:${i.mediaType};base64,${i.base64}`)]);
+      setProgress({ phase: 'laden', percent: 0 });
+      try {
+        const found = await scanRoom(images, setProgress);
+        setReview(found);
+      } finally {
+        setProgress(null);
+      }
     });
+
+  const confirmScan = async (ids: string[]) => {
+    await updateData((d) => ({
+      ...d,
+      gym: {
+        ...d.gym,
+        equipment: [...new Set([...d.gym.equipment, ...ids])],
+        scannedAt: new Date().toISOString(),
+        photosScanned: d.gym.photosScanned + 1,
+      },
+    }));
+    setReview(null);
+    toast(ids.length ? `${ids.length} Geräte übernommen. Tipp: Fotografiere auch die anderen Ecken.` : 'Nichts übernommen.');
+  };
 
   const toggleEquipment = (id: string) => {
     if (guardDemo()) return;
@@ -87,11 +106,10 @@ export default function TrainingScreen() {
   const importLiftoff = () =>
     run('liftoff', async () => {
       if (guardDemo()) return;
-      const images: ImageInput[] = await pickImages(6);
-      if (!images.length) return;
-      const snap = await readLiftoffScreenshots(settings.anthropicApiKey, images, settings.liftoff.email.split('@')[0] || undefined);
-      await saveSnapshot(snap);
-      toast(`Liftoff importiert${snap.position ? `: Platz ${snap.position}` : ''}${snap.achievements.length ? `, ${snap.achievements.length} Errungenschaften` : ''}.`);
+      const rows = await readScreenshots(6);
+      if (!rows) return;
+      const draft = parseLiftoffText(rows, settings.liftoff.email.split('@')[0] || undefined);
+      setLiftoffDraft({ draft, version: Date.now() });
     });
 
   const saveSnapshot = async (snap: LiftoffSnapshot) => {
@@ -119,7 +137,7 @@ export default function TrainingScreen() {
     <>
       <Card title="Trainingsraum scannen" icon="📷">
         <p className="small secondary" style={{ marginTop: 0 }}>
-          Fotografiere deinen Trainingsraum (gern mehrere Fotos aus verschiedenen Ecken). Die KI erkennt die sichtbaren Geräte – daraus entstehen
+          Fotografiere deinen Trainingsraum (gern mehrere Fotos aus verschiedenen Ecken). Die Bilderkennung auf deinem Handy erkennt die sichtbaren Geräte – daraus entstehen
           deine Übungsvorschläge.
         </p>
         {previews.length > 0 && (
@@ -130,19 +148,32 @@ export default function TrainingScreen() {
           </div>
         )}
         <div className="row wrap">
-          <button className="btn primary grow" onClick={scan} disabled={busy !== null}>
+          <button className="btn primary grow" onClick={() => scan('kamera')} disabled={busy !== null}>
             <IconCamera width={20} height={20} />
-            {busy === 'scan' ? 'Erkenne Geräte …' : equipment.length ? 'Weiteres Foto scannen' : 'Foto aufnehmen & scannen'}
+            {equipment.length ? 'Weiteres Foto scannen' : 'Foto aufnehmen & scannen'}
           </button>
-          <button className="btn grow" onClick={() => setEditOpen(true)}>
-            Geräte bearbeiten
+          <button className="btn grow" onClick={() => scan('galerie')} disabled={busy !== null}>
+            Aus der Galerie
           </button>
         </div>
-        {!settings.anthropicApiKey && !settings.demoMode && (
-          <p className="tiny muted">
-            Für die Bilderkennung brauchst du einen Claude-API-Schlüssel (Einstellungen). Ohne Schlüssel kannst du die Geräte auch von Hand auswählen.
-          </p>
+        {progress && (
+          <div className="banner info small" style={{ marginTop: 10 }}>
+            <span aria-hidden>⏳</span>
+            <span className="grow">
+              {progress.phase === 'laden' ? 'Erkennungsmodell wird geladen' : 'Analysiere Foto'} … {progress.percent} %
+              <div style={{ height: 4, borderRadius: 2, background: 'var(--accent-soft)', marginTop: 6 }}>
+                <div style={{ width: `${progress.percent}%`, height: 4, borderRadius: 2, background: 'var(--accent)' }} />
+              </div>
+            </span>
+          </div>
         )}
+        <button className="btn ghost" style={{ marginTop: 6, paddingLeft: 0 }} onClick={() => setEditOpen(true)}>
+          Geräte von Hand auswählen
+        </button>
+        <p className="tiny muted" style={{ margin: 0 }}>
+          Kostenlos und auf dem Handy: Beim ersten Scan wird das offene Erkennungsmodell einmalig heruntergeladen (WLAN empfohlen), danach geht es
+          offline. Prüfe die Vorschläge kurz – nicht jedes Gerät wird sicher erkannt.
+        </p>
         {equipment.length > 0 && (
           <>
             <div className="section-title" style={{ marginTop: 14 }}>
@@ -155,7 +186,6 @@ export default function TrainingScreen() {
                 </span>
               ))}
             </div>
-            {data.gym.notes && <p className="tiny muted">{data.gym.notes}</p>}
             {data.gym.scannedAt && <p className="tiny muted" style={{ margin: 0 }}>Zuletzt gescannt am {formatDate(new Date(data.gym.scannedAt))}</p>}
           </>
         )}
@@ -233,7 +263,7 @@ export default function TrainingScreen() {
         title="Liftoff"
         icon="🚀"
         action={
-          <button className="btn ghost" onClick={() => setManualOpen(true)}>
+          <button className="btn ghost" onClick={() => setLiftoffDraft({ version: Date.now() })}>
             Eintragen
           </button>
         }
@@ -246,8 +276,8 @@ export default function TrainingScreen() {
               </button>
             }
           >
-            Mach Screenshots von Rangliste, Rang und Errungenschaften in der Liftoff-App und importiere sie hier. Workouts kannst du zusätzlich in den
-            Einstellungen per Liftoff-Login laden.
+            Mach Screenshots von Rangliste, Rang und Errungenschaften in der Liftoff-App und importiere sie hier – die Texterkennung läuft kostenlos auf
+            dem Handy, du prüfst die Werte vor dem Speichern. Workouts kannst du zusätzlich in den Einstellungen per Liftoff-Login laden.
           </Empty>
         ) : (
           <>
@@ -356,36 +386,108 @@ export default function TrainingScreen() {
         </div>
       </Sheet>
 
-      <ManualLiftoffSheet
-        open={manualOpen}
-        onClose={() => setManualOpen(false)}
-        onSave={async (snap) => {
-          if (guardDemo()) return;
-          await saveSnapshot(snap);
-          setManualOpen(false);
-          toast('Liftoff-Werte gespeichert.');
-        }}
-      />
+      {review && <ScanReviewSheet detections={review} known={equipment} onClose={() => setReview(null)} onConfirm={confirmScan} />}
+
+      {liftoffDraft && (
+        <LiftoffEntrySheet
+          key={liftoffDraft.version}
+          draft={liftoffDraft.draft}
+          onClose={() => setLiftoffDraft(null)}
+          onSave={async (snap) => {
+            if (guardDemo()) return;
+            await saveSnapshot(snap);
+            setLiftoffDraft(null);
+            toast('Liftoff-Werte gespeichert.');
+          }}
+        />
+      )}
     </>
   );
 }
 
-function ManualLiftoffSheet({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (s: LiftoffSnapshot) => Promise<void> }) {
-  const [rank, setRank] = useState('');
-  const [position, setPosition] = useState('');
-  const [xp, setXp] = useState('');
-  const [streak, setStreak] = useState('');
-  const [achievements, setAchievements] = useState('');
-  const num = (v: string) => (v.trim() && Number.isFinite(Number(v)) ? Number(v) : undefined);
+/** Lets you confirm what the room scan found before it is saved. */
+function ScanReviewSheet({
+  detections,
+  known,
+  onClose,
+  onConfirm,
+}: {
+  detections: Detection[];
+  known: string[];
+  onClose: () => void;
+  onConfirm: (ids: string[]) => Promise<void>;
+}) {
+  const [picked, setPicked] = useState<Set<string>>(() => new Set(detections.filter((d) => d.confidence >= 0.3).map((d) => d.id)));
+  const toggle = (id: string) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   return (
-    <Sheet open={open} onClose={onClose} title="Liftoff-Werte eintragen">
+    <Sheet open onClose={onClose} title="Erkannte Geräte">
+      {detections.length === 0 ? (
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Auf dem Foto wurden keine Trainingsgeräte erkannt. Versuch es mit einem anderen Blickwinkel oder wähle die Geräte von Hand aus.
+        </p>
+      ) : (
+        <>
+          <p className="small muted" style={{ marginTop: 0 }}>
+            Tippe an, was wirklich da ist. Die Prozentzahl zeigt, wie sicher sich die Erkennung ist.
+          </p>
+          <div className="chips" style={{ marginBottom: 14 }}>
+            {detections.map((d) => (
+              <button key={d.id} className={`chip ${picked.has(d.id) ? 'on' : ''}`} onClick={() => toggle(d.id)}>
+                {EQUIPMENT[d.id] ?? d.id} · {Math.round(d.confidence * 100)} %{known.includes(d.id) ? ' (schon dabei)' : ''}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <button className="btn primary block" onClick={() => void onConfirm([...picked])}>
+        {picked.size ? `${picked.size} Geräte übernehmen` : 'Schließen'}
+      </button>
+    </Sheet>
+  );
+}
+
+/** Liftoff values – prefilled from screenshot text recognition, or empty for manual entry. */
+function LiftoffEntrySheet({ draft, onClose, onSave }: { draft?: LiftoffDraft; onClose: () => void; onSave: (s: LiftoffSnapshot) => Promise<void> }) {
+  const str = (v?: number | string) => (v === undefined ? '' : String(v));
+  const [rank, setRank] = useState(draft?.rank ?? '');
+  const [position, setPosition] = useState(str(draft?.position));
+  const [xp, setXp] = useState(str(draft?.xp));
+  const [level, setLevel] = useState(str(draft?.level));
+  const [streak, setStreak] = useState(str(draft?.streakDays));
+  const [picked, setPicked] = useState<Set<string>>(() => new Set(draft?.achievements.filter((a) => a.preselected).map((a) => a.name) ?? []));
+  const [extra, setExtra] = useState('');
+  const num = (v: string) => {
+    const n = Number(v.replace(/[.\s]/g, '').replace(',', '.'));
+    return v.trim() && Number.isFinite(n) ? n : undefined;
+  };
+  const toggle = (name: string) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (n.has(name)) n.delete(name);
+      else n.add(name);
+      return n;
+    });
+  const candidates = draft?.achievements ?? [];
+  return (
+    <Sheet open onClose={onClose} title={draft ? 'Aus Screenshots erkannt' : 'Liftoff-Werte eintragen'}>
+      {draft && (
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Prüfe die erkannten Werte und korrigiere sie bei Bedarf.
+        </p>
+      )}
       <label className="field">
         <span>Rang / Liga</span>
         <input className="input" value={rank} onChange={(e) => setRank(e.target.value)} placeholder="z. B. Gold III" />
       </label>
       <div className="row">
         <label className="field grow">
-          <span>Platz in der Rangliste</span>
+          <span>Platz</span>
           <input className="input" inputMode="numeric" value={position} onChange={(e) => setPosition(e.target.value)} />
         </label>
         <label className="field grow">
@@ -393,30 +495,59 @@ function ManualLiftoffSheet({ open, onClose, onSave }: { open: boolean; onClose:
           <input className="input" inputMode="numeric" value={xp} onChange={(e) => setXp(e.target.value)} />
         </label>
       </div>
+      <div className="row">
+        <label className="field grow">
+          <span>Level</span>
+          <input className="input" inputMode="numeric" value={level} onChange={(e) => setLevel(e.target.value)} />
+        </label>
+        <label className="field grow">
+          <span>Serie (Tage)</span>
+          <input className="input" inputMode="numeric" value={streak} onChange={(e) => setStreak(e.target.value)} />
+        </label>
+      </div>
+      {draft && draft.leaderboard.length > 0 && (
+        <p className="small secondary">
+          Rangliste erkannt: {draft.leaderboard.length} Einträge
+          {draft.leaderboard.some((e) => e.isMe) ? ' (inkl. deinem Platz)' : ''}.
+        </p>
+      )}
+      {candidates.length > 0 && (
+        <div className="field">
+          <span>Errungenschaften – tippe an, was dazugehört</span>
+          <div className="chips">
+            {candidates.map((a) => (
+              <button key={a.name} className={`chip ${picked.has(a.name) ? 'on' : ''}`} onClick={() => toggle(a.name)}>
+                {a.unlocked ? '🏆' : '🔒'} {a.name}
+                {a.progress ? ` · ${a.progress}` : ''}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <label className="field">
-        <span>Serie (Tage)</span>
-        <input className="input" inputMode="numeric" value={streak} onChange={(e) => setStreak(e.target.value)} />
-      </label>
-      <label className="field">
-        <span>Neue Errungenschaften (eine pro Zeile)</span>
-        <textarea className="input" value={achievements} onChange={(e) => setAchievements(e.target.value)} />
+        <span>{candidates.length ? 'Weitere Errungenschaften' : 'Neue Errungenschaften'} (eine pro Zeile)</span>
+        <textarea className="input" value={extra} onChange={(e) => setExtra(e.target.value)} />
       </label>
       <button
         className="btn primary block"
         onClick={() =>
           void onSave({
             date: new Date().toISOString(),
-            source: 'manual',
+            source: draft ? 'screenshot' : 'manual',
             rank: rank.trim() || undefined,
             position: num(position),
             xp: num(xp),
+            level: num(level),
             streakDays: num(streak),
-            achievements: achievements
-              .split('\n')
-              .map((a) => a.trim())
-              .filter(Boolean)
-              .map((name) => ({ name, unlocked: true })),
-            leaderboard: [],
+            achievements: [
+              ...candidates.filter((a) => picked.has(a.name)).map((a) => ({ name: a.name, unlocked: a.unlocked, progress: a.progress })),
+              ...extra
+                .split('\n')
+                .map((a) => a.trim())
+                .filter(Boolean)
+                .map((name) => ({ name, unlocked: true })),
+            ],
+            leaderboard: draft?.leaderboard ?? [],
           })
         }
       >

@@ -1,8 +1,12 @@
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import type { ImageInput } from './claude';
 import { isNative } from './http';
 
-/** Longest edge we send to the AI – enough detail, small upload. */
+export interface ImageInput {
+  base64: string;
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp';
+}
+
+/** Longest edge kept for on-device analysis – enough detail, little memory. */
 const MAX_EDGE = 1568;
 
 async function downscale(dataUrl: string): Promise<ImageInput> {
@@ -75,6 +79,13 @@ export async function pickImages(limit = 6): Promise<ImageInput[]> {
   }
   const files = await pickFiles(true, false);
   return Promise.all(files.slice(0, limit).map(async (f) => downscale(await readFile(f))));
+}
+
+/** Picks screenshots and returns their local file paths (for on-device text recognition). */
+export async function pickImagePaths(limit = 6): Promise<string[]> {
+  if (!isNative) return [];
+  const res = await Camera.pickImages({ quality: 100, limit });
+  return res.photos.map((p) => p.path).filter((p): p is string => !!p);
 }
 
 /** Picks a text file (e.g. .ics export). */

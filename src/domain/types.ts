@@ -171,11 +171,6 @@ export interface CalendarData {
   errors: string[];
 }
 
-export interface AiSummary {
-  text: string;
-  createdAt: string;
-}
-
 export interface AppData {
   calendar: CalendarData;
   health: HealthData;
@@ -183,14 +178,12 @@ export interface AppData {
   oralb: OralBData;
   gym: GymData;
   holidays: HolidayData;
-  aiSummary?: AiSummary;
 }
 
 export type TrainingGoal = 'muskelaufbau' | 'kraft' | 'ausdauer' | 'fitness';
 
 export interface Settings {
   icsUrls: string[];
-  anthropicApiKey: string;
   reminders: {
     enabled: boolean;
     testOffsets: number[];

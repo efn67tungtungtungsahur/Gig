@@ -7,7 +7,6 @@ export const LIFTOFF_DEFAULT_API_BASE = 'https://v2-13-10.api.getgymbros.com';
 export function defaultSettings(today = new Date()): Settings {
   return {
     icsUrls: [],
-    anthropicApiKey: '',
     reminders: {
       enabled: true,
       testOffsets: [7, 3, 2],
@@ -81,30 +80,33 @@ export function emptyData(): AppData {
 export function mergeSettings(stored: Partial<Settings> | null | undefined, today = new Date()): Settings {
   const d = defaultSettings(today);
   if (!stored) return d;
+  // Older versions stored an AI API key – it is no longer used and gets dropped.
+  const { anthropicApiKey: _unused, ...rest } = stored as Partial<Settings> & { anthropicApiKey?: string };
   return {
     ...d,
-    ...stored,
-    reminders: { ...d.reminders, ...stored.reminders },
-    keywords: { ...d.keywords, ...stored.keywords },
-    sleep: { ...d.sleep, ...stored.sleep },
-    holidays: { ...d.holidays, ...stored.holidays },
-    weeklyReport: { ...d.weeklyReport, ...stored.weeklyReport },
-    training: { ...d.training, ...stored.training },
-    liftoff: { ...d.liftoff, ...stored.liftoff },
+    ...rest,
+    reminders: { ...d.reminders, ...rest.reminders },
+    keywords: { ...d.keywords, ...rest.keywords },
+    sleep: { ...d.sleep, ...rest.sleep },
+    holidays: { ...d.holidays, ...rest.holidays },
+    weeklyReport: { ...d.weeklyReport, ...rest.weeklyReport },
+    training: { ...d.training, ...rest.training },
+    liftoff: { ...d.liftoff, ...rest.liftoff },
   };
 }
 
 export function mergeData(stored: Partial<AppData> | null | undefined): AppData {
   const d = emptyData();
   if (!stored) return d;
+  const { aiSummary: _unused, ...rest } = stored as Partial<AppData> & { aiSummary?: unknown };
   return {
     ...d,
-    ...stored,
-    calendar: { ...d.calendar, ...stored.calendar },
-    health: { ...d.health, ...stored.health },
-    liftoff: { ...d.liftoff, ...stored.liftoff },
-    oralb: { ...d.oralb, ...stored.oralb },
-    gym: { ...d.gym, ...stored.gym },
-    holidays: stored.holidays?.periods?.length ? stored.holidays : d.holidays,
+    ...rest,
+    calendar: { ...d.calendar, ...rest.calendar },
+    health: { ...d.health, ...rest.health },
+    liftoff: { ...d.liftoff, ...rest.liftoff },
+    oralb: { ...d.oralb, ...rest.oralb },
+    gym: { ...d.gym, ...rest.gym },
+    holidays: rest.holidays?.periods?.length ? rest.holidays : d.holidays,
   };
 }

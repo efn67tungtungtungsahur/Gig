@@ -4,8 +4,8 @@ import { signed } from '../../domain/report';
 import type { BrushSession } from '../../domain/types';
 import { addDays, dayKey, formatMinutes, formatShort, formatTime, fromDayKey, WEEKDAYS_SHORT } from '../../lib/dates';
 import { useStore } from '../../lib/store';
-import { pickImages } from '../../integrations/camera';
-import { readOralBScreenshots } from '../../integrations/claude';
+import { parseOralBText } from '../../domain/ocrParse';
+import { readScreenshots } from '../../integrations/ocr';
 import { BarChart, LineChart, type BarDatum } from '../charts';
 import { Card, Empty, Segmented, Sheet, Stat, Status, toast, useAction } from '../components';
 import { useNav } from '../nav';
@@ -286,6 +286,7 @@ function TeethTab() {
   const { report, data, settings, updateData } = useStore();
   const { busy, run } = useAction();
   const [open, setOpen] = useState(false);
+  const [found, setFound] = useState<BrushSession[] | null>(null);
   const o = report.oral;
   const days = lastDays(14);
   const bars: BarDatum[] = days.map((d) => {
@@ -298,14 +299,14 @@ function TeethTab() {
     };
   });
 
-  const save = async (sessions: BrushSession[], streak?: number) => {
+  const save = async (sessions: BrushSession[]) => {
     if (settings.demoMode) {
       toast('Im Demo-Modus wird nichts gespeichert.');
       return;
     }
     await updateData((d) => ({
       ...d,
-      oralb: { sessions: mergeSessions(d.oralb.sessions, sessions), streakDays: streak ?? d.oralb.streakDays, lastImport: new Date().toISOString() },
+      oralb: { ...d.oralb, sessions: mergeSessions(d.oralb.sessions, sessions), lastImport: new Date().toISOString() },
     }));
   };
 
@@ -315,11 +316,11 @@ function TeethTab() {
         toast('Im Demo-Modus wird nichts gespeichert.');
         return;
       }
-      const images = await pickImages(6);
-      if (!images.length) return;
-      const res = await readOralBScreenshots(settings.anthropicApiKey, images);
-      await save(res.sessions, res.streakDays);
-      toast(`${res.sessions.length} Putzvorgänge importiert.`);
+      const rows = await readScreenshots(6);
+      if (!rows) return;
+      const sessions = parseOralBText(rows);
+      if (!sessions.length) throw new Error('Auf den Screenshots wurden keine Putzvorgänge gefunden. Nimm am besten den Verlauf mit Datum und Putzdauer auf.');
+      setFound(sessions);
     });
 
   return (
@@ -352,12 +353,61 @@ function TeethTab() {
           </button>
         </div>
         <p className="tiny muted" style={{ marginBottom: 0 }}>
-          Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots vom Verlauf/der Putzübersicht – Gig Fit liest Dauer, Abdeckung und Druck
-          automatisch aus.
+          Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots vom Verlauf – Gig Fit liest Datum, Dauer, Abdeckung und Druck
+          kostenlos auf dem Handy aus, du bestätigst vor dem Speichern.
         </p>
       </Card>
       <BrushSheet open={open} onClose={() => setOpen(false)} onSave={async (s) => { await save([s]); setOpen(false); toast('Gespeichert.'); }} />
+      {found && (
+        <ImportReviewSheet
+          sessions={found}
+          onClose={() => setFound(null)}
+          onSave={async (list) => {
+            await save(list);
+            setFound(null);
+            toast(`${list.length} Putzvorgänge gespeichert.`);
+          }}
+        />
+      )}
     </>
+  );
+}
+
+/** Shows what text recognition found so wrong rows can be dropped before saving. */
+function ImportReviewSheet({ sessions, onClose, onSave }: { sessions: BrushSession[]; onClose: () => void; onSave: (s: BrushSession[]) => Promise<void> }) {
+  const [keep, setKeep] = useState<Set<number>>(() => new Set(sessions.map((_, i) => i)));
+  const toggle = (i: number) =>
+    setKeep((k) => {
+      const n = new Set(k);
+      if (n.has(i)) n.delete(i);
+      else n.add(i);
+      return n;
+    });
+  return (
+    <Sheet open onClose={onClose} title="Erkannte Putzvorgänge">
+      <p className="small muted" style={{ marginTop: 0 }}>
+        Entferne den Haken bei allem, was falsch erkannt wurde.
+      </p>
+      <ul className="list">
+        {sessions.map((s, i) => (
+          <li key={i}>
+            <label className="row small" style={{ cursor: 'pointer' }}>
+              <input type="checkbox" checked={keep.has(i)} onChange={() => toggle(i)} />
+              <span className="grow">
+                {formatShort(new Date(s.date))}, {formatTime(new Date(s.date))} Uhr
+              </span>
+              <span className="strong">
+                {Math.floor(s.durationSec / 60)}:{String(s.durationSec % 60).padStart(2, '0')} min
+              </span>
+              {s.coveragePct !== undefined && <span className="muted">{s.coveragePct} %</span>}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <button className="btn primary block" style={{ marginTop: 12 }} onClick={() => void onSave(sessions.filter((_, i) => keep.has(i)))}>
+        {keep.size} speichern
+      </button>
+    </Sheet>
   );
 }
 

@@ -9,6 +9,8 @@ import { healthAvailability, openHealthConnect, requestHealthPermissions } from 
 import { isNative } from '../../integrations/http';
 import { liftoffLogin } from '../../integrations/liftoffApi';
 import { sendTestNotification } from '../../integrations/notify';
+import { isVisionModelCached, preloadVisionModel } from '../../integrations/vision';
+import type { VisionProgress } from '../../integrations/visionEngine';
 import { Card, Segmented, Switch, toast, useAction } from '../components';
 
 function parseOffsets(text: string): number[] {
@@ -29,10 +31,12 @@ export default function SettingsScreen() {
   const [hcState, setHcState] = useState<{ available: boolean; reason?: string } | null>(null);
   const [liftEmail, setLiftEmail] = useState(settings.liftoff.email);
   const [liftPassword, setLiftPassword] = useState('');
-  const [apiKey, setApiKey] = useState(settings.anthropicApiKey);
+  const [modelCached, setModelCached] = useState<boolean | null>(null);
+  const [modelProgress, setModelProgress] = useState<VisionProgress | null>(null);
 
   useEffect(() => {
     void healthAvailability().then(setHcState);
+    void isVisionModelCached().then(setModelCached);
   }, []);
 
   const set = (fn: (s: Settings) => Settings) => void updateSettings(fn);
@@ -78,10 +82,16 @@ export default function SettingsScreen() {
       toast(sync.errors.find((e) => e.includes('Liftoff')) ?? 'Liftoff verbunden.');
     });
 
-  const saveKey = () =>
-    run('key', async () => {
-      await updateSettings((s) => ({ ...s, anthropicApiKey: apiKey.trim() }));
-      toast(apiKey.trim() ? 'API-Schlüssel gespeichert.' : 'API-Schlüssel entfernt.');
+  const loadModel = () =>
+    run('model', async () => {
+      setModelProgress({ phase: 'laden', percent: 0 });
+      try {
+        await preloadVisionModel(setModelProgress);
+        setModelCached(true);
+        toast('Erkennungsmodell geladen – der Raum-Scan funktioniert jetzt auch offline.');
+      } finally {
+        setModelProgress(null);
+      }
     });
 
   const resetAll = () =>
@@ -202,26 +212,28 @@ export default function SettingsScreen() {
 
       <Card title="Oral-B iO" icon="🪥">
         <p className="small secondary" style={{ margin: 0 }}>
-          Oral-B hat keine offene Schnittstelle. Importiere Screenshots aus der Oral-B-App (Gesundheit → Zähne) oder trage Putzvorgänge ein – Gig Fit
-          wertet Häufigkeit, Dauer, Abdeckung und Druck aus.
+          Oral-B hat keine offene Schnittstelle. Importiere Screenshots aus der Oral-B-App (Gesundheit → Zähne) – die Texterkennung läuft auf dem
+          Handy – oder trage Putzvorgänge ein. Gig Fit wertet Häufigkeit, Dauer, Abdeckung und Druck aus.
         </p>
       </Card>
 
-      <Card title="KI (Claude)" icon="✨">
+      <Card title="Bilderkennung (kostenlos)" icon="📷">
         <p className="small secondary" style={{ marginTop: 0 }}>
-          Für Raum-Scan, Screenshot-Import und KI-Zusammenfassung. Schlüssel unter{' '}
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">
-            console.anthropic.com
-          </a>{' '}
-          erstellen. Er bleibt auf deinem Handy und wird nur an api.anthropic.com gesendet.
+          Raum-Scan und Screenshot-Import laufen direkt auf deinem Handy – ohne Konto, ohne Kosten. Für den Raum-Scan wird einmalig ein offenes
+          Erkennungsmodell (MobileCLIP) von Hugging Face geladen, danach funktioniert er offline. Die Texterkennung (Google ML Kit) ist schon in der App
+          enthalten.
         </p>
-        <label className="field">
-          <span>Claude-API-Schlüssel</span>
-          <input className="input" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" />
-        </label>
-        <button className="btn primary block" onClick={saveKey} disabled={busy !== null || apiKey === settings.anthropicApiKey}>
-          Speichern
-        </button>
+        {modelProgress ? (
+          <div className="banner info small">
+            Lade Modell … {modelProgress.percent} %
+          </div>
+        ) : modelCached ? (
+          <p className="small">✓ Erkennungsmodell ist auf dem Handy.</p>
+        ) : (
+          <button className="btn block" onClick={loadModel} disabled={busy !== null}>
+            Modell jetzt laden (WLAN empfohlen)
+          </button>
+        )}
       </Card>
 
       <div className="section-title">Erinnerungen</div>

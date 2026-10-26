@@ -1,0 +1,37 @@
+name: Gig Fit – Raum-Scan testen
+
+# Runs the on-device room scan of the production build in Chromium against
+# real gym photos and logs what it detects.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'src/domain/visionLabels.ts'
+      - 'src/integrations/vision*.ts'
+      - 'scripts/e2e-scan.mjs'
+      - '.github/workflows/scan-check.yml'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+
+      - name: App starten
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          npx --yes wait-on@8.0.3 http://localhost:4173/ --timeout 60000
+
+      - name: Fotos scannen
+        run: node scripts/e2e-scan.mjs http://localhost:4173/

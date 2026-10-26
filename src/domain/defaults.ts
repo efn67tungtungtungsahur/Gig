@@ -49,6 +49,7 @@ export function defaultSettings(today = new Date()): Settings {
       remindersEnabled: true,
       learningPhaseDays: 7,
       pauseForTests: false,
+      source: 'auto',
     },
     holidays: {
       biweeklyEnabled: true,

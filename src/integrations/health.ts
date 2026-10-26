@@ -114,7 +114,7 @@ function dailyAverage(list: HealthSample[]): DayValue[] {
 }
 
 /** Reads the last weeks of data from Health Connect. */
-export async function syncHealth(now = new Date()): Promise<HealthData> {
+export async function syncHealth(now = new Date(), sleepSource = 'auto'): Promise<HealthData> {
   const errors: string[] = [];
   const end = now;
   const start30 = new Date(now.getTime() - 30 * 86_400_000);
@@ -154,7 +154,8 @@ export async function syncHealth(now = new Date()): Promise<HealthData> {
   workouts.forEach((w) => w.source && sources.add(w.source));
 
   return {
-    sleep: mainNights(sleepRaw.map(toNight)),
+    sleep: mainNights(sleepRaw.map(toNight), sleepSource),
+    sleepSessions: sleepRaw.map(toNight),
     steps,
     distance: distanceM.map((d) => ({ date: d.date, value: Math.round(d.value / 10) / 100 })),
     activeCalories: calories,

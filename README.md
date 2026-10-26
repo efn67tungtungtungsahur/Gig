@@ -50,7 +50,7 @@ Gig Fit erkennt Termine automatisch an Stichwörtern (anpassbar):
 ### Fitbit & Withings → über Health Connect
 Google schaltet die alte Fitbit-Web-API am **30.10.2026** ab. Gig Fit liest deshalb über **Health Connect**; dafür brauchst du kein Entwicklerkonto:
 1. **Fitbit-App** → Profil → Einstellungen → **Health Connect** → Synchronisierung an.
-2. **Withings-App (Health Mate)** → Profil → **Apps & Geräte verbinden** → **Health Connect** an.
+2. **Withings-App (Health Mate)** → Profil → **Apps & Geräte verbinden** → **Health Connect** an. Für Schlafdaten dort auch **Schlaf** teilen. Zeichnen Fitbit und Withings dieselbe Nacht auf, legst du unter Gesundheit → Schlaf → **Schlafquellen** fest, welche zählt.
 3. In Gig Fit auf **Verbinden** tippen und die Leseberechtigungen erlauben.
 
 ### Liftoff

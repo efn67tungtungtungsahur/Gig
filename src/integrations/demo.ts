@@ -70,6 +70,12 @@ export function demoData(now = new Date()): AppData {
     last.light = asleep - (last.deep ?? 0) - (last.rem ?? 0);
   }
   d.health.sleep = sleep;
+  // Withings misst die letzten zwei Wochen mit – etwas anders als Fitbit.
+  const withings = sleep.slice(-14).map((n, i) => {
+    const asleep = n.minutesAsleep - 6 - Math.round(noise(i, 20) * 12);
+    return { ...n, start: new Date(new Date(n.start).getTime() + 5 * 60_000).toISOString(), minutesAsleep: asleep, light: (n.light ?? 0) - (n.minutesAsleep - asleep), source: 'Withings' };
+  });
+  d.health.sleepSessions = [...sleep, ...withings];
   for (let i = 29; i >= 0; i--) {
     const day = addDays(today, -i);
     const key = dayKey(day);

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CATEGORY_LABEL, computeBadges, type Badge, type BadgeCategory } from '../../domain/badges';
+import { sleepSourceCounts } from '../../domain/sleep';
 import { ActivityBadge } from '../badgeArt';
 import { mergeSessions } from '../../domain/oralb';
 import { signed } from '../../domain/report';
@@ -42,6 +43,59 @@ export default function HealthScreen() {
 function lastDays(n: number): string[] {
   const today = new Date();
   return Array.from({ length: n }, (_, i) => dayKey(addDays(today, i - n + 1)));
+}
+
+/** Which apps deliver sleep, and which one wins when several record the same night. */
+function SleepSourcesCard() {
+  const { data, settings, updateSettings } = useStore();
+  const sessions = data.health.sleepSessions ?? data.health.sleep;
+  const counts = sleepSourceCounts(sessions);
+  const withings = counts.find((c) => c.source === 'Withings');
+  const current = settings.sleep.source;
+  const options = [
+    { value: 'auto', label: 'Automatisch' },
+    ...counts.map((c) => ({ value: c.source, label: c.source })),
+    ...(current !== 'auto' && !counts.some((c) => c.source === current) ? [{ value: current, label: current }] : []),
+  ];
+  return (
+    <Card title="Schlafquellen" icon="🛏️">
+      {counts.length ? (
+        <ul className="list">
+          {counts.map((c) => (
+            <li key={c.source} className="row small">
+              <span className="grow strong">{c.source}</span>
+              <span className="muted">{c.nights} Nächte in 30 Tagen</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Noch keine Schlafdaten aus Health Connect.
+        </p>
+      )}
+      {options.length > 2 && (
+        <div className="field" style={{ marginTop: 10 }}>
+          <span>Welche Quelle zählt, wenn mehrere dieselbe Nacht messen?</span>
+          <Segmented value={current} onChange={(v) => void updateSettings((s) => ({ ...s, sleep: { ...s.sleep, source: v } }))} options={options} />
+          <span className="tiny muted">Automatisch nimmt die Messung mit dem meisten Schlaf.</span>
+        </div>
+      )}
+      {!withings && (
+        <div className="banner warn small" style={{ marginTop: 10 }}>
+          <span aria-hidden>⚠️</span>
+          <span>
+            Von Withings kommt kein Schlaf an. So schaltest du es frei:
+            <br />
+            1. Withings-App → Profil → Apps &amp; Geräte verbinden → Health Connect: auch „Schlaf“ teilen.
+            <br />
+            2. Android-Einstellungen → Health Connect → App-Berechtigungen: Withings darf „Schlaf“ schreiben, Gig Fit darf „Schlaf“ lesen.
+            <br />
+            3. Gerät (z. B. Sleep Analyzer oder Uhr) mit der Withings-App synchronisieren, dann hier oben auf Aktualisieren tippen.
+          </span>
+        </div>
+      )}
+    </Card>
+  );
 }
 
 function SleepTab() {
@@ -151,6 +205,7 @@ function SleepTab() {
           </ul>
         </Card>
       )}
+      <SleepSourcesCard />
     </>
   );
 }

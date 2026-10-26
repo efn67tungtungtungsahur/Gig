@@ -9,6 +9,7 @@ import { syncCalendars } from '../integrations/calendarSync';
 import { demoData } from '../integrations/demo';
 import { syncHealth } from '../integrations/health';
 import { mergeActivity } from '../domain/badges';
+import { mainNights } from '../domain/sleep';
 import { fetchBrandenburgHolidays } from '../integrations/holidaysApi';
 import { liftoffWorkouts } from '../integrations/liftoffApi';
 import { applyNotificationPlan } from '../integrations/notify';
@@ -111,7 +112,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         if (s.healthConnected) {
           tasks.push(
-            syncHealth(now)
+            syncHealth(now, s.sleep.source)
               .then((health) => {
                 next = { ...next, health, activity: mergeActivity(next.activity, health) };
                 result.ok.push(`Health Connect: ${health.sleep.length} Nächte, ${health.steps.length} Tage`);
@@ -186,7 +187,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [ready, syncAll]);
 
-  const data = useMemo(() => (settings.demoMode ? demoData() : realData), [settings.demoMode, realData]);
+  const data = useMemo(() => {
+    const d = settings.demoMode ? demoData() : realData;
+    // The preferred sleep source applies immediately, without a new sync.
+    const sessions = d.health.sleepSessions;
+    return sessions?.length ? { ...d, health: { ...d.health, sleep: mainNights(sessions, settings.sleep.source) } } : d;
+  }, [settings.demoMode, settings.sleep.source, realData]);
   const report = useMemo(() => buildReport(data, settings), [data, settings]);
 
   const value: StoreValue = { ready, settings, data, realData, report, syncing, lastSync, updateSettings, updateData, syncAll };

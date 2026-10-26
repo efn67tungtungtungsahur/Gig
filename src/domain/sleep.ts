@@ -145,11 +145,33 @@ export function analyzeSleep(allNights: SleepNight[], goalHours: number, today =
 }
 
 /** Collapses raw sleep sessions into one main night per wake-up day (naps are dropped). */
-export function mainNights(sessions: SleepNight[]): SleepNight[] {
+/** Shorter sessions are naps and never replace a night. */
+const MIN_NIGHT_MIN = 120;
+
+/**
+ * One main night per wake-up day. With a preferred source (e.g. "Withings"),
+ * its night wins whenever it recorded one; otherwise the longest sleep wins.
+ */
+export function mainNights(sessions: SleepNight[], prefer = 'auto'): SleepNight[] {
   const byDay = new Map<string, SleepNight>();
+  const preferred = (s: SleepNight) => prefer !== 'auto' && s.source === prefer && s.minutesAsleep >= MIN_NIGHT_MIN;
   for (const s of sessions) {
     const existing = byDay.get(s.date);
-    if (!existing || s.minutesAsleep > existing.minutesAsleep) byDay.set(s.date, s);
+    if (!existing) byDay.set(s.date, s);
+    else if (preferred(s) !== preferred(existing)) {
+      if (preferred(s)) byDay.set(s.date, s);
+    } else if (s.minutesAsleep > existing.minutesAsleep) byDay.set(s.date, s);
   }
   return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Nights (sessions of 2 h or more) per source, most first. */
+export function sleepSourceCounts(sessions: SleepNight[]): { source: string; nights: number }[] {
+  const days = new Map<string, Set<string>>();
+  for (const s of sessions) {
+    if (s.minutesAsleep < MIN_NIGHT_MIN) continue;
+    const src = s.source ?? 'Unbekannt';
+    days.set(src, (days.get(src) ?? new Set()).add(s.date));
+  }
+  return [...days.entries()].map(([source, d]) => ({ source, nights: d.size })).sort((a, b) => b.nights - a.nights);
 }

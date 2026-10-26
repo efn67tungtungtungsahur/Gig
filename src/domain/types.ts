@@ -83,7 +83,10 @@ export interface WorkoutEntry {
 }
 
 export interface HealthData {
+  /** One main night per day (see mainNights). */
   sleep: SleepNight[];
+  /** Every sleep session from every source (Fitbit, Withings …). */
+  sleepSessions?: SleepNight[];
   /** Daily steps for the last year. */
   steps: DayValue[];
   /** Daily distance in km for the last year. */
@@ -307,6 +310,8 @@ export interface Settings {
     learningPhaseDays: number;
     /** Also pause sleep reminders before tests, not only Klausuren. */
     pauseForTests: boolean;
+    /** Source that wins when several record the same night ('auto' = longest sleep). */
+    source: string;
   };
   holidays: {
     biweeklyEnabled: boolean;

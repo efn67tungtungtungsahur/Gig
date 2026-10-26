@@ -1,0 +1,6 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+# Android build outputs are covered by android/.gitignore

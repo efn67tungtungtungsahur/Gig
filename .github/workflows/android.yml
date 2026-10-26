@@ -1,0 +1,122 @@
+name: Android-App bauen
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_B64: ${{ secrets.GIG_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Tests
+        run: npm test
+
+      - name: Web-App bauen
+        run: npm run build
+
+      - name: Android-Projekt synchronisieren
+        run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+
+      # Signing key: either your own from repository secrets (GIG_KEYSTORE_BASE64,
+      # GIG_KEYSTORE_PASSWORD, optional GIG_KEY_ALIAS / GIG_KEY_PASSWORD), or one
+      # generated on the first run and kept in the Actions cache – never in the repo.
+      # A stable key lets new versions install over old ones.
+      - name: Signaturschlüssel aus Secrets
+        if: env.KEYSTORE_B64 != ''
+        env:
+          PASS: ${{ secrets.GIG_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.GIG_KEY_ALIAS }}
+          KEYPASS: ${{ secrets.GIG_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/gig.jks"
+          {
+            echo "GIG_KEYSTORE_FILE=$RUNNER_TEMP/gig.jks"
+            echo "GIG_KEYSTORE_PASSWORD=$PASS"
+            echo "GIG_KEY_ALIAS=${ALIAS:-gig}"
+            echo "GIG_KEY_PASSWORD=${KEYPASS:-$PASS}"
+          } >> "$GITHUB_ENV"
+
+      - name: Signaturschlüssel aus dem Cache laden
+        if: env.KEYSTORE_B64 == ''
+        uses: actions/cache@v4
+        with:
+          path: ~/.gig-signing
+          key: gig-signing-key-v1
+
+      - name: Signaturschlüssel vorbereiten
+        if: env.KEYSTORE_B64 == ''
+        run: |
+          mkdir -p ~/.gig-signing
+          if [ ! -f ~/.gig-signing/gig.jks ]; then
+            openssl rand -hex 24 > ~/.gig-signing/pass
+            PASS="$(cat ~/.gig-signing/pass)"
+            keytool -genkeypair -noprompt -keystore ~/.gig-signing/gig.jks -storetype PKCS12 -alias gig \
+              -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=Gig App, O=Gig, C=DE"
+            echo "Neuer Signaturschlüssel erzeugt."
+          fi
+          PASS="$(cat ~/.gig-signing/pass)"
+          echo "::add-mask::$PASS"
+          {
+            echo "GIG_KEYSTORE_FILE=$HOME/.gig-signing/gig.jks"
+            echo "GIG_KEYSTORE_PASSWORD=$PASS"
+            echo "GIG_KEY_ALIAS=gig"
+            echo "GIG_KEY_PASSWORD=$PASS"
+          } >> "$GITHUB_ENV"
+
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: APK umbenennen
+        run: cp android/app/build/outputs/apk/release/app-release.apk Gig.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gig-APK
+          path: Gig.apk
+
+      - name: Tag auf aktuellen Stand setzen
+        run: |
+          git tag -f app-latest
+          git push -f origin app-latest
+
+      - name: Als Release veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-latest
+          name: Gig – neueste Version (Build ${{ github.run_number }})
+          make_latest: true
+          files: Gig.apk
+          body: |
+            📱 **Gig für Android** – Build ${{ github.run_number }} vom Commit ${{ github.sha }}.
+
+            **Installieren:** `Gig.apk` unten unter „Assets“ auf dem Handy herunterladen, öffnen und „Installation aus unbekannten Quellen“ für deinen Browser erlauben.
+            Neue Versionen installieren sich einfach über die alte – deine Daten bleiben erhalten.

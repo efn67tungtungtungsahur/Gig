@@ -139,7 +139,7 @@ export default function BodyScreen() {
           <div className="plaque-grid">
             {cells.map((c) => (
               <div key={c.key} className="plaque-cell">
-                <RankPlaque tier={c.tier} level={c.level} rankName={c.rankName} label={c.label} muscle={'muscle' in c ? c.muscle : undefined} date={c.date} />
+                <RankPlaque tier={c.tier} level={c.level} rankName={c.rankName} label={c.label} date={c.date} />
                 {c.tier !== null && c.progress !== undefined && (
                   <div className="rank-bar" style={{ ['--bar' as string]: rankBackground(c.tier), margin: '2px 8px 0' }}>
                     <div style={{ width: `${Math.round(c.progress * 100)}%` }} />

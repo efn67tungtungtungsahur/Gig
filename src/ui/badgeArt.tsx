@@ -1,6 +1,5 @@
 import { useId } from 'react';
 import type { Badge, BadgeCategory } from '../domain/badges';
-import type { MuscleGroup } from '../domain/types';
 import { RankEmblem, rankColor } from './bodyFigure';
 
 // ---------------------------------------------------------------------------
@@ -80,20 +79,18 @@ const PLAQUE = 'M14 6 H106 C111 6 114 9 114 14 V112 C114 126 96 140 60 154 C24 1
 const PLAQUE_INNER = 'M18 12 H102 C105.5 12 108 14.5 108 18 V110 C108 122 92 134 60 147 C28 134 12 122 12 110 V18 C12 14.5 14.5 12 18 12 Z';
 const RIBBON = 'M0 90 H120 L113 99 L120 108 H0 L7 99 Z';
 
-/** Collectible plaque for a muscle's (or the overall) rank. */
+/** Collectible plaque for a muscle's (or the overall) rank – always with a star. */
 export function RankPlaque({
   tier,
   level,
   rankName,
   label,
-  muscle,
   date,
 }: {
   tier: number | null;
   level?: number;
   rankName?: string;
   label: string;
-  muscle?: MuscleGroup;
   date?: string;
 }) {
   const uid = useId().replace(/:/g, '');
@@ -131,10 +128,10 @@ export function RankPlaque({
       <div className="plaque-emblem">
         {locked ? (
           <span style={{ filter: 'grayscale(1)', opacity: 0.35 }}>
-            <RankEmblem tier={0} muscle={muscle ?? 'gesamt'} size={56} pips={false} />
+            <RankEmblem tier={0} size={56} pips={false} />
           </span>
         ) : (
-          <RankEmblem tier={tier} level={level} muscle={muscle ?? 'gesamt'} size={56} />
+          <RankEmblem tier={tier} level={level} size={56} />
         )}
       </div>
       <div className="plaque-rank" style={rankName && rankName.length > 11 ? { fontSize: `${Math.min(10.5, 128 / rankName.length)}cqw` } : undefined}>

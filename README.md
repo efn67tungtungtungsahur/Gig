@@ -66,7 +66,7 @@ Im Tab **Training** auf **„▶ … starten“** tippen. Das Training läuft we
 
 ### Körperübersicht & Muskel-Ränge
 Tab **Training** → **Körperübersicht**. Tippe auf einen Muskel, um Rang, beste Leistung, nächstes Ziel, Sätze und Erholung zu sehen.
-- Jeder Muskel hat ein eigenes Rang-Abzeichen: Sechseck mit Muskel-Symbol, ab Gold mit Flügeln, Diamant mit Speer, Champion mit dunklen Flügeln und Hörnern, Olympionike mit Krone und Holo-Schimmer.
+- Jeder Muskel hat ein eigenes Rang-Abzeichen: facettiertes Sechseck mit Muskel-Symbol (Faust, Rücken, Brust, Sixpack, Beine), ab Gold mit Flügeln, Diamant mit Speer, Champion mit dunklen Flügeln und Hörnern, Olympionike mit Krone und Holo-Schimmer.
 - Der Gesamt-Rang zeigt einen Kreis pro Muskel in seiner Rangfarbe und die Leiter aller Ränge.
 - **Rang-Rechner:** Übung wählen (durchblättern oder suchen), Gewicht bzw. Zusatzgewicht und Wiederholungen auf der Skala einstellen – der Rang erscheint sofort. Mit „Rang speichern“ zählt der Wert für deine Muskel-Ränge.
 - Die Ränge beruhen auf gängigen Kraft-Standards: geschätztes Maximalgewicht (Epley) im Verhältnis zum Körpergewicht, bei Kurzhanteln pro Hand, bei Klimmzügen, Dips & Co. über die Wiederholungen. Gewertet wird die stärkste Übung der letzten 90 Tage; Nebenmuskeln zählen zu 70 %.
@@ -74,7 +74,7 @@ Tab **Training** → **Körperübersicht**. Tippe auf einen Muskel, um Rang, bes
 - Grundlage sind deine in der App erfassten Sätze und Liftoff-Workouts mit Übungsnamen.
 
 ### Plaketten & Abzeichen
-- **Plaketten:** Körperübersicht → Reiter **Plaketten**. Für jede Muskelgruppe und den Gesamt-Rang eine Plakette in Rangfarbe mit Abzeichen, Rang und Datum der besten Leistung.
+- **Plaketten:** Körperübersicht → Reiter **Plaketten**. Für jede Muskelgruppe und den Gesamt-Rang eine Plakette in Rangfarbe mit facettiertem Stern, Rang und Datum der besten Leistung.
 - **Abzeichen** (ähnlich wie bei Fitbit, eigene Motive): Gesundheit → Aktivität. **Tagesschritte** von 5.000 bis 50.000, **Gesamtstrecke** vom Marathon über „Bis nach Berlin“, Jakobsweg und Rhein bis einmal um die Welt, **Laufen** (erster Lauf, 5 km, 10 km, Halbmarathon, Marathon, 10/50/100 Läufe). Schritte, Strecke und Läufe kommen über Health Connect (Fitbit); die App merkt sich jeden Tag dauerhaft. Fehlt die Strecke, wird sie aus den Schritten geschätzt.
 
 ### Oral-B iO

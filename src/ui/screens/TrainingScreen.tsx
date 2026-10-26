@@ -11,7 +11,7 @@ import { useStore } from '../../lib/store';
 import { parseLiftoffText, type LiftoffDraft } from '../../domain/ocrParse';
 import { readScreenshots } from '../../integrations/ocr';
 import { Card, Empty, Sheet, Stat, toast, useAction } from '../components';
-import { analyzeBodyMuscles, LOAD_LABELS } from '../../domain/body';
+import { analyzeBodyMuscles } from '../../domain/body';
 import { BodyFigure, RankBadge, rankFill } from '../bodyFigure';
 import { useNav } from '../nav';
 import { ExerciseProgressSheet, WorkoutDetailSheet } from '../workoutSheets';
@@ -239,13 +239,13 @@ export default function TrainingScreen() {
               ) : (
                 <p className="muted" style={{ marginTop: 0 }}>Noch keine Ränge – erfasse dein erstes Training.</p>
               )}
-              <div className="tiny muted">Beansprucht</div>
+              <div className="tiny muted">Energie</div>
               <div>
                 {body.muscles
-                  .filter((m) => m.loadLevel >= 1)
-                  .sort((a, b) => b.load - a.load)
-                  .map((m) => `${MUSCLE_LABEL[m.muscle].replace(/ \(.*\)/, '')} (${LOAD_LABELS[m.loadLevel]})`)
-                  .join(', ') || 'nichts – alles erholt'}
+                  .filter((m) => m.energyLevel < 5)
+                  .sort((a, b) => a.energy - b.energy)
+                  .map((m) => `${MUSCLE_LABEL[m.muscle].replace(/ \(.*\)/, '')} ${m.energy} %`)
+                  .join(', ') || 'alle Muskeln voll belastbar'}
               </div>
             </div>
           </div>

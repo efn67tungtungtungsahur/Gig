@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { analyzeBodyMuscles, LOAD_LABELS as LOAD_LABEL, RANK_NAMES, type MuscleStatus } from '../../domain/body';
+import { analyzeBodyMuscles, ENERGY_LABELS, RANK_NAMES, type MuscleStatus } from '../../domain/body';
 import { MUSCLE_LABEL } from '../../domain/exercises';
 import type { MuscleGroup } from '../../domain/types';
 import { formatKg } from '../../domain/workoutLog';
@@ -14,7 +14,7 @@ type Mode = 'last' | 'woche' | 'rang';
 const WEEK_LABEL = ['0', '1–3', '4–7', '8–11', '12–15', '16+'];
 
 const MODE_TEXT: Record<Mode, string> = {
-  last: 'Wie stark jeder Muskel gerade beansprucht ist. Jeder harte Satz zählt, Nebenmuskeln halb; nach etwa einem Tag ist die Hälfte abgeklungen.',
+  last: 'Wie viel Energie jeder Muskel gerade hat: tiefgelb = voll erholt, den kannst du richtig beanspruchen; blassgelb = Energie raus, lieber Pause. Jeder harte Satz zählt, Nebenmuskeln halb; nach etwa einem Tag ist die Hälfte wieder da.',
   woche: 'Sätze pro Muskel in den letzten 7 Tagen (Nebenmuskeln zählen halb). Für Muskelaufbau sind 10–20 Sätze pro Woche ideal.',
   rang: 'Rang pro Muskel aus deiner stärksten Übung der letzten 90 Tage im Verhältnis zum Körpergewicht – von Holz III bis Olympionike I.',
 };
@@ -33,8 +33,8 @@ function lastTrainedText(m: MuscleStatus): string {
 }
 
 function loadText(m: MuscleStatus): string {
-  if (m.loadLevel === 0) return 'erholt';
-  return `${LOAD_LABEL[m.loadLevel]} beansprucht${m.recoveredInH > 0 ? ` · erholt in ~${m.recoveredInH} h` : ''}`;
+  if (m.energyLevel === 5) return 'voll belastbar';
+  return `Energie ${m.energy} % – ${ENERGY_LABELS[m.energyLevel]}${m.recoveredInH > 0 ? ` · belastbar in ~${m.recoveredInH} h` : ''}`;
 }
 
 function bestText(m: MuscleStatus): string {
@@ -59,12 +59,16 @@ export default function BodyScreen() {
   const sel = body.muscles.find((m) => m.muscle === selected);
 
   const fill = (m: MuscleStatus) =>
-    mode === 'rang' ? (m.rank ? rankFill(m.rank.tier) : undefined) : levelColor(mode === 'last' ? m.loadLevel : m.weeklyLevel);
+    mode === 'rang' ? (m.rank ? rankFill(m.rank.tier) : undefined) : mode === 'last' ? `var(--energy-${m.energyLevel})` : levelColor(m.weeklyLevel);
   const fills = Object.fromEntries(body.muscles.map((m) => [m.muscle, fill(m)]));
-  const hot = mode === 'last' ? body.muscles.filter((m) => m.loadLevel >= 4).map((m) => m.muscle) : [];
-  const legend: { label: string; color: string }[] = (
-    mode === 'last' ? LOAD_LABEL : mode === 'woche' ? WEEK_LABEL.map((l, i) => (i ? `${l} Sätze` : '0 Sätze')) : ['kein Rang', ...RANK_NAMES]
-  ).map((label, i) => ({ label, color: i === 0 ? 'var(--fig-muscle)' : mode === 'rang' ? rankBackground(i - 1) : `var(--lvl-${i})` }));
+  const hot = mode === 'last' ? body.muscles.filter((m) => m.energyLevel === 1).map((m) => m.muscle) : [];
+  const legend: { label: string; color: string }[] =
+    mode === 'last'
+      ? ENERGY_LABELS.slice(1).map((label, i) => ({ label, color: `var(--energy-${i + 1})` }))
+      : (mode === 'woche' ? WEEK_LABEL.map((l, i) => (i ? `${l} Sätze` : '0 Sätze')) : ['kein Rang', ...RANK_NAMES]).map((label, i) => ({
+          label,
+          color: i === 0 ? 'var(--fig-muscle)' : mode === 'rang' ? rankBackground(i - 1) : `var(--lvl-${i})`,
+        }));
 
   const readout = (m: MuscleStatus) => {
     const name = MUSCLE_LABEL[m.muscle];
@@ -253,11 +257,13 @@ function MuscleDetail({ m, onClose }: { m: MuscleStatus; onClose: () => void }) 
       )}
       <div className="stats" style={{ marginTop: 12 }}>
         <div className="stat">
-          <div className="label">Beanspruchung</div>
+          <div className="label">Energie</div>
           <div className="value" style={{ fontSize: 18 }}>
-            {LOAD_LABEL[m.loadLevel]}
+            {m.energy} %
           </div>
-          <div className="delta">{m.recoveredInH > 0 ? `erholt in ~${m.recoveredInH} h` : lastTrainedText(m)}</div>
+          <div className="delta">
+            {ENERGY_LABELS[m.energyLevel]} · {m.recoveredInH > 0 ? `belastbar in ~${m.recoveredInH} h` : lastTrainedText(m)}
+          </div>
         </div>
         <div className="stat">
           <div className="label">Sätze (7 Tage)</div>

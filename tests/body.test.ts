@@ -73,6 +73,8 @@ describe('muscle ranks', () => {
     expect(brust.weeklySets).toBe(4);
     expect(brust.loadLevel).toBeGreaterThanOrEqual(2); // yesterday
     expect(brust.recoveredInH).toBeGreaterThan(0);
+    expect(brust.energy).toBeLessThan(80);
+    expect(brust.energyLevel).toBeLessThan(5);
     expect(brust.next?.exercise.id).toBe('bankdruecken');
     expect(brust.next!.weight).toBeGreaterThan(80);
     // Bench press also works the triceps (secondary, half the sets)
@@ -80,6 +82,8 @@ describe('muscle ranks', () => {
     // Legs: four days ago → mostly recovered
     expect(a.muscles.find((m) => m.muscle === 'beine')!.loadLevel).toBeLessThanOrEqual(1);
     expect(a.muscles.find((m) => m.muscle === 'waden')!.rank).toBeNull();
+    // Never trained = full energy (deep yellow)
+    expect(a.muscles.find((m) => m.muscle === 'waden')).toMatchObject({ energy: 100, energyLevel: 5 });
     expect(a.overall).not.toBeNull();
     expect(a.trainedCount).toBeGreaterThanOrEqual(5);
   });

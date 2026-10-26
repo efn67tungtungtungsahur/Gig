@@ -971,6 +971,12 @@ textarea.input {
   --rank-7: #ef4f7d;
   --rank-8: #b06cff;
   --rank-8-bg: linear-gradient(120deg, #ffd34d, #ff5fa2 38%, #b06cff 68%, #3fd8ff);
+  /* Energy: pale yellow = needs rest … deep yellow = ready (validated ordinal ramp) */
+  --energy-1: #f5efd7;
+  --energy-2: #f0da8c;
+  --energy-3: #ebc23e;
+  --energy-4: #dfa30a;
+  --energy-5: #c48600;
   --fig-skin: #2c2c2a;
   --fig-muscle: #403f3c;
   --fig-edge: #0b0b0c;

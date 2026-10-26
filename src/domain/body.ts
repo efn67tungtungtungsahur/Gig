@@ -369,6 +369,9 @@ export interface MuscleStatus {
   /** Fatigue units (hard sets, decaying with a 24 h half-life). */
   load: number;
   loadLevel: number; // 0 = none … 5 = very high
+  /** Remaining energy in percent (100 = fully recovered). */
+  energy: number;
+  energyLevel: number; // 1 = needs rest … 5 = ready for a hard session
   /** Sets in the last 7 days (secondary muscles count half). */
   weeklySets: number;
   weeklyLevel: number; // 0 = none … 5
@@ -393,6 +396,8 @@ const HALF_LIFE_H = 24;
 const RANK_WINDOW_DAYS = 90;
 export const LOAD_THRESHOLDS = [0.5, 2, 4, 6, 9];
 export const LOAD_LABELS = ['erholt', 'kaum', 'leicht', 'mittel', 'stark', 'sehr stark'];
+/** Energy level 1–5 (pale → deep yellow on the figure). */
+export const ENERGY_LABELS = ['', 'Pause nötig', 'müde', 'halb erholt', 'fast erholt', 'voll belastbar'];
 export const WEEKLY_THRESHOLDS = [0.5, 4, 8, 12, 16];
 const RECOVERED_BELOW = 2;
 
@@ -466,6 +471,8 @@ export function analyzeBodyMuscles(data: AppData, settings: Settings, now = new 
       next: best && rank ? nextGoal(best, rank, bodyWeight, sex) : undefined,
       load,
       loadLevel: bucket(load, LOAD_THRESHOLDS),
+      energy: Math.round(100 * (1 - Math.min(load, LOAD_THRESHOLDS[4]) / LOAD_THRESHOLDS[4])),
+      energyLevel: 5 - Math.min(4, bucket(load, LOAD_THRESHOLDS)),
       weeklySets: Math.round(weekly * 10) / 10,
       weeklyLevel: bucket(weekly, WEEKLY_THRESHOLDS),
       lastTrained: last,

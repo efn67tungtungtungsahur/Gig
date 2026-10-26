@@ -319,13 +319,34 @@ export function rankBackground(tier: number): string {
 // ---------------------------------------------------------------------------
 // Rank emblems: hexagon with a muscle symbol; wings and extras grow with the rank.
 
-/** Symbols in a ±9 box around the emblem centre: white shape, detail lines in the rank color, white motion strokes. */
+/** Symbols in a ±9 box around the emblem centre: light shape with a dark outline and detail lines. */
 interface EmblemIcon {
   d: string;
   lines?: string;
-  strokes?: string;
 }
 
+const ARM: EmblemIcon = {
+  d: 'M-3.2 9 L-3.4 2.4 C-5.2 2 -6.2 0.6 -6.2 -1.4 L-6.2 -6.6 C-6.2 -8 -5.2 -8.9 -3.9 -8.9 L4 -8.9 C5.4 -8.9 6.4 -8 6.4 -6.6 L6.4 -1.2 C6.4 0.8 5.4 2.1 3.9 2.5 L3.8 9 Z',
+  lines: 'M-3.1 -8.9 L-3.1 -4.6 M0.1 -8.9 L0.1 -4.6 M3.3 -8.9 L3.3 -4.6 M-6.2 -4.6 C-2 -5 2 -5 6.4 -4.6 M-6.1 -3 C-2.6 -3.4 0.6 -2.8 2.4 -1 C1.2 0.2 -1.6 0.5 -6 0.3 M-3.4 2.4 C-1.2 3 1.6 3 3.9 2.5',
+};
+const BACK_ICON: EmblemIcon = {
+  d: 'M-8.8 -5.4 C-8 -7.6 -5 -8.6 -2.2 -8.8 L-1.2 -9.2 L1.2 -9.2 L2.2 -8.8 C5 -8.6 8 -7.6 8.8 -5.4 C9 -2.6 7.8 0 5.2 2.4 C4 3.6 3.4 5.6 3.6 9 L-3.6 9 C-3.4 5.6 -4 3.6 -5.2 2.4 C-7.8 0 -9 -2.6 -8.8 -5.4 Z',
+  lines: 'M0 -8.8 L0 8.6 M-1.6 -8.8 C-2.6 -6.8 -4 -5.6 -6.6 -5.4 M1.6 -8.8 C2.6 -6.8 4 -5.6 6.6 -5.4 M-6.6 -5.4 C-5 -2.8 -3 -1.2 -0.6 -0.8 M6.6 -5.4 C5 -2.8 3 -1.2 0.6 -0.8 M-5.2 2.4 C-3.4 1.8 -1.8 2.8 -0.6 4.4 M5.2 2.4 C3.4 1.8 1.8 2.8 0.6 4.4 M-2.2 5.2 L-2.2 9 M2.2 5.2 L2.2 9',
+};
+const CHEST: EmblemIcon = {
+  d: 'M-9 -2.6 C-9 -5.6 -7.6 -7.6 -5 -8 L-2 -8.4 C-1.2 -7.2 1.2 -7.2 2 -8.4 L5 -8 C7.6 -7.6 9 -5.6 9 -2.6 L8.6 3.6 L6.4 3.8 L6.2 7.6 C4 8.6 -4 8.6 -6.2 7.6 L-6.4 3.8 L-8.6 3.6 Z',
+  lines: 'M-6.2 -7.6 C-5.6 -4.6 -6 -1 -6.4 3.8 M6.2 -7.6 C5.6 -4.6 6 -1 6.4 3.8 M-6.2 2.6 C-4.4 4.4 -1.8 4.6 0 3.4 C1.8 4.6 4.4 4.4 6.2 2.6 M0 -7.4 L0 3.4 M-1.6 -7.6 C-3 -6.8 -4.6 -6.6 -6 -6.8 M1.6 -7.6 C3 -6.8 4.6 -6.6 6 -6.8 M-2.6 6 L2.6 6',
+};
+const ABS: EmblemIcon = {
+  d: 'M-6.4 -8.6 L6.4 -8.6 C6.6 -4 6.2 0.4 5.2 4 C4.2 7 2.4 8.8 0 9 C-2.4 8.8 -4.2 7 -5.2 4 C-6.2 0.4 -6.6 -4 -6.4 -8.6 Z',
+  lines: 'M0 -8.6 L0 8.6 M-6.4 -4.4 C-4 -4 -2 -4 0 -4.4 C2 -4 4 -4 6.4 -4.4 M-6.1 -0.2 C-4 0.2 -2 0.2 0 -0.2 C2 0.2 4 0.2 6.1 -0.2 M-5.2 4 C-3.4 4.4 -1.6 4.4 0 4 C1.6 4.4 3.4 4.4 5.2 4',
+};
+const LEG: EmblemIcon = {
+  d: 'M-8.6 -5 C-8.6 -7.4 -7 -8.6 -5 -8.6 L3.6 -8.6 C6.4 -8.6 8.2 -6.8 8.2 -4 L8 -0.6 C7.8 1.6 7.2 3.6 6.8 5.4 C7.8 5.8 8.6 6.6 8.6 7.6 C8.6 8.4 8 8.8 7.2 8.8 L1.2 8.8 C0.4 8.8 0 8.2 0.2 7.4 L1 4.6 C1.4 2.6 1.6 0.6 1.4 -1.6 L-5 -1.6 C-7.2 -1.6 -8.6 -3 -8.6 -5 Z',
+  lines: 'M-6 -5.2 C-2 -6.4 2 -6.2 5.2 -4.8 M5.6 -2.6 C6.6 -1.6 7.2 -0.4 7.6 0.8 M2.2 0.8 C3 2.4 3.2 4 2.6 5.6 M1 6.8 C3 6.4 5 6.2 6.8 5.6',
+};
+
+/** Five motifs: arms (incl. shoulders), back, chest, abs and legs (incl. glutes, hamstrings, calves). */
 const ICONS: Record<MuscleGroup | 'gesamt', EmblemIcon> = {
   gesamt: {
     d: (() => {
@@ -338,49 +359,28 @@ const ICONS: Record<MuscleGroup | 'gesamt', EmblemIcon> = {
       return `M${pts.join(' L')} Z`;
     })(),
   },
-  brust: {
-    d: 'M-8.2 -4.6 C-6.4 -7.2 -3.2 -7.6 -0.7 -6.8 L-0.7 3.4 C-2.6 5.2 -5.8 5.2 -7.6 3.2 C-8.8 1.6 -9 -2.2 -8.2 -4.6 Z M8.2 -4.6 C6.4 -7.2 3.2 -7.6 0.7 -6.8 L0.7 3.4 C2.6 5.2 5.8 5.2 7.6 3.2 C8.8 1.6 9 -2.2 8.2 -4.6 Z',
-    lines: 'M-7.6 -1.4 C-5.4 -2.2 -3 -2.4 -0.7 -2 M7.6 -1.4 C5.4 -2.2 3 -2.4 0.7 -2',
-  },
-  ruecken: {
-    d: 'M-8.4 -6.2 C-6 -7.8 -3 -8.2 0 -8.2 C3 -8.2 6 -7.8 8.4 -6.2 C7.8 -2.8 5.6 1 3.2 3.6 L2.6 8.2 L-2.6 8.2 L-3.2 3.6 C-5.6 1 -7.8 -2.8 -8.4 -6.2 Z',
-    lines: 'M0 -7.4 L0 7.4 M-6.8 -4.8 C-4.6 -2.6 -2.6 0.6 -1.4 4.6 M6.8 -4.8 C4.6 -2.6 2.6 0.6 1.4 4.6 M-3.2 -8 C-2.2 -6.2 -1 -5 0 -4.4 C1 -5 2.2 -6.2 3.2 -8',
-  },
-  schultern: {
-    d: 'M-4.2 -6.6 C-1.6 -7.6 1.6 -7.6 4.2 -6.6 L3.8 8.4 L-3.8 8.4 Z M-9.1 -1.6 A3.5 3.5 0 1 1 -2.1 -1.6 A3.5 3.5 0 1 1 -9.1 -1.6 Z M2.1 -1.6 A3.5 3.5 0 1 1 9.1 -1.6 A3.5 3.5 0 1 1 2.1 -1.6 Z M-1.7 -8.8 L1.7 -8.8 L1.7 -6.6 L-1.7 -6.6 Z',
-    lines: 'M-2.1 -1.6 A3.5 3.5 0 0 1 -5.6 1.9 M2.1 -1.6 A3.5 3.5 0 0 0 5.6 1.9 M-3.6 4 L3.6 4',
-  },
-  bizeps: {
-    d: 'M-8 6.5 L4 6.5 C6.6 6.5 8 4.8 7.8 2.4 L7.2 -3 C8.2 -3.6 8.4 -5.2 7.6 -6.4 C6.8 -7.8 4.6 -8.4 3 -7.6 C1.8 -7 1.6 -5.6 2.2 -4.4 L2.6 -1.2 C1.6 -3.8 -1.8 -5.2 -4.4 -3.4 C-6 -2.4 -7 -0.6 -8 0.6 Z',
-    lines: 'M2.6 -1.2 C1.2 0.6 -1 1.2 -3.6 0.8 M3 -7.6 C4 -6.6 4.4 -5.4 4.2 -4.2',
-  },
-  trizeps: {
-    d: 'M-5.4 -8.4 C-2 -9.4 3 -9 5.6 -7.4 C6.6 -3.4 6 2 4.4 6.4 C3.6 8 2 8.8 0 8.8 C-2 8.8 -3.6 8 -4.4 6.4 C-6 2 -6.6 -3.4 -5.4 -8.4 Z',
-    lines: 'M-3 -3.4 L-3 2.4 C-3 5.6 3 5.6 3 2.4 L3 -3.4 M0 -8.4 L0 -3',
-  },
-  beine: {
-    d: 'M-3.8 -8.6 L1.6 -8.8 C4.2 -7.4 6.4 -4.8 7 -2.2 C7.6 -1.4 7.2 -0.4 6.2 0.2 C4.6 1.6 2.4 3.8 1.4 5.2 C3.6 5.4 6.6 5.6 7.6 6.6 C8.6 7.2 8.4 8.4 7.4 8.6 L-1.8 8.6 C-2.8 8.2 -2.6 6.4 -1.6 5.8 C-1.6 3.4 -0.6 0.8 2.6 -0.8 C0.4 -1.8 -2.6 -3.4 -3.6 -5.2 C-4.6 -6.2 -4.6 -7.8 -3.8 -8.6 Z',
-    lines: 'M1.4 5.2 C0.4 6 -0.8 6.2 -1.8 6',
-    strokes: 'M-9.4 -2 L-5.8 -2 M-9.8 1.4 L-4.6 1.4 M-9.4 4.8 L-5.2 4.8',
-  },
-  po: {
-    d: 'M-7.8 -6.4 C-5 -8 5 -8 7.8 -6.4 C8.8 -1.4 8.2 3.4 6.2 7.4 L1.2 7.4 L0 5 L-1.2 7.4 L-6.2 7.4 C-8.2 3.4 -8.8 -1.4 -7.8 -6.4 Z',
-    lines: 'M0 -6.6 L0 4.4 M-7 2.4 C-4.8 4.4 -2.2 4.6 -0.4 3 M7 2.4 C4.8 4.4 2.2 4.6 0.4 3',
-  },
-  beinbeuger: {
-    d: 'M-5.8 -8.2 L5.8 -8.2 C6.4 -3 5.6 2 3.8 6 C3.2 7.6 1.8 8.6 0 8.6 C-1.8 8.6 -3.2 7.6 -3.8 6 C-5.6 2 -6.4 -3 -5.8 -8.2 Z',
-    lines: 'M0 -7.4 L0 4.6 M-3.6 5.6 C-1.6 4.2 1.6 4.2 3.6 5.6',
-  },
-  waden: {
-    d: 'M-3.4 -8.4 L2.4 -8.4 C5 -5 5.4 -1.2 3.4 2 L2.6 5 C4.4 5.4 6.6 6 7.2 7.2 C7.4 8 6.8 8.4 6 8.4 L-2.8 8.4 C-3.4 8.4 -3.6 7.8 -3.4 7 L-2.6 2 C-4.4 -1.4 -4.6 -4.8 -3.4 -8.4 Z',
-    lines: 'M-0.4 -7 C1.6 -4.4 1.8 -1.2 0.8 1.6',
-  },
-  core: { d: 'M-4.8 -6.2 h3.8 v3.4 h-3.8 Z M1 -6.2 h3.8 v3.4 h-3.8 Z M-4.8 -1.7 h3.8 v3.4 h-3.8 Z M1 -1.7 h3.8 v3.4 h-3.8 Z M-4.4 2.8 h3.4 v3.6 C-2.6 6.4 -4 5.4 -4.4 2.8 Z M1 2.8 h3.4 C4 5.4 2.6 6.4 1 6.4 Z' },
+  brust: CHEST,
+  ruecken: BACK_ICON,
+  schultern: ARM,
+  bizeps: ARM,
+  trizeps: ARM,
+  core: ABS,
+  beine: LEG,
+  po: LEG,
+  beinbeuger: LEG,
+  waden: LEG,
   cardio: { d: 'M0 6 C-8 0 -7 -6 -3.5 -6 C-1.8 -6 -0.6 -5 0 -3.6 C0.6 -5 1.8 -6 3.5 -6 C7 -6 8 0 0 6 Z' },
 };
 
 const HEX = 'M32 5.5 L46.3 13.75 L46.3 30.25 L32 38.5 L17.7 30.25 L17.7 13.75 Z';
 const HEX_INNER = 'M32 9.2 L43.1 15.6 L43.1 28.4 L32 34.8 L20.9 28.4 L20.9 15.6 Z';
+// Bevel facets between the outer and inner hexagon (light from the top left).
+const HEX_OUT_PTS = [[32, 5.5], [46.3, 13.75], [46.3, 30.25], [32, 38.5], [17.7, 30.25], [17.7, 13.75]];
+const HEX_IN_PTS = [[32, 9.2], [43.1, 15.6], [43.1, 28.4], [32, 34.8], [20.9, 28.4], [20.9, 15.6]];
+const BEVEL = HEX_OUT_PTS.map((o, i) => {
+  const j = (i + 1) % 6;
+  return { d: `M${o} L${HEX_OUT_PTS[j]} L${HEX_IN_PTS[j]} L${HEX_IN_PTS[i]} Z`, light: [true, true, false, false, false, true][i], opacity: [0.32, 0.12, 0.12, 0.24, 0.1, 0.22][i] };
+});
 const TAB = 'M28.4 37.4 L35.6 37.4 L34.6 42.4 L29.4 42.4 Z';
 const WINGS = {
   small: 'M20 17 C15 15 10 15 6 16.5 C8.5 17.2 10 18 11 19 C8.6 19.4 7 20.4 6 21.8 C9 22 11.6 22.8 13.6 24 C15.4 25.2 17.6 26.6 20 27.2 Z',
@@ -456,13 +456,16 @@ export function RankEmblem({
         )}
       {tier === 6 && pair((t) => <path d={HORN} transform={t} fill="#2a0b12" stroke={fill} strokeWidth="0.9" />)}
       <path d={TAB} style={{ fill }} stroke="rgba(0,0,0,0.32)" strokeWidth="0.6" />
-      <path d={HEX} style={{ fill }} stroke="rgba(0,0,0,0.35)" strokeWidth="0.9" />
-      <path d={HEX} fill={sheen} />
-      <path d={HEX_INNER} fill="#fff" fillOpacity="0.2" stroke="#fff" strokeOpacity="0.5" strokeWidth="0.8" />
-      <g transform="translate(32 22) scale(1.22)">
-        <path d={ICONS[muscle].d} fill="#fff" fillOpacity="0.96" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
-        {ICONS[muscle].lines && <path d={ICONS[muscle].lines} fill="none" style={{ stroke: fill }} strokeWidth="0.9" strokeLinecap="round" />}
-        {ICONS[muscle].strokes && <path d={ICONS[muscle].strokes} fill="none" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" />}
+      <path d={HEX} style={{ fill }} stroke="rgba(0,0,0,0.4)" strokeWidth="0.9" />
+      {BEVEL.map((b) => (
+        <path key={b.d} d={b.d} fill={b.light ? '#fff' : '#000'} fillOpacity={b.opacity} />
+      ))}
+      <path d={HEX_INNER} style={{ fill }} stroke="rgba(0,0,0,0.3)" strokeWidth="0.6" />
+      <path d={HEX_INNER} fill="#fff" fillOpacity="0.14" />
+      <g transform="translate(32 22) scale(1.18)">
+        <path d={ICONS[muscle].d} fill="#fff" />
+        <path d={ICONS[muscle].d} style={{ fill }} fillOpacity="0.22" stroke="rgba(0,0,0,0.5)" strokeWidth="0.9" strokeLinejoin="round" />
+        {ICONS[muscle].lines && <path d={ICONS[muscle].lines} fill="none" stroke="rgba(0,0,0,0.42)" strokeWidth="0.8" strokeLinecap="round" />}
       </g>
       {top && <path d={CROWN} style={{ fill }} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" strokeLinejoin="round" />}
       {Array.from({ length: n }, (_, i) => (

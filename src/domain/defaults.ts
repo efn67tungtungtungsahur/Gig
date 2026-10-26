@@ -49,7 +49,7 @@ export function defaultSettings(today = new Date()): Settings {
       remindersEnabled: true,
       learningPhaseDays: 7,
       pauseForTests: false,
-      source: 'auto',
+      source: 'Withings',
     },
     holidays: {
       biweeklyEnabled: true,
@@ -124,7 +124,7 @@ export function mergeSettings(stored: Partial<Settings> | null | undefined, toda
     ...rest,
     reminders: { ...d.reminders, ...rest.reminders },
     keywords: { ...d.keywords, ...rest.keywords },
-    sleep: { ...d.sleep, ...rest.sleep },
+    sleep: { ...d.sleep, ...rest.sleep, ...(rest.sleep?.source && rest.sleep.source !== 'auto' ? {} : { source: d.sleep.source }) },
     holidays: { ...d.holidays, ...rest.holidays },
     weeklyReport: { ...d.weeklyReport, ...rest.weeklyReport },
     training: { ...d.training, ...rest.training },

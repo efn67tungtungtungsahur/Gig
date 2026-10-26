@@ -53,7 +53,7 @@ export function analyzeSleep(allNights: SleepNight[], goalHours: number, today =
       bedtimeSpreadMin: 0,
       trendMin: 0,
       lastNight: nights[nights.length - 1],
-      tips: ['Verbinde Fitbit oder Withings über Health Connect, damit die Schlafanalyse starten kann.'],
+      tips: ['Noch keine Schlafdaten. Unter „Schlafquellen“ siehst du, welche App Schlaf liefert und wie du Withings über Health Connect freischaltest.'],
       headline: 'Noch zu wenig Schlafdaten',
     };
   }
@@ -149,18 +149,15 @@ export function analyzeSleep(allNights: SleepNight[], goalHours: number, today =
 const MIN_NIGHT_MIN = 120;
 
 /**
- * One main night per wake-up day. With a preferred source (e.g. "Withings"),
- * its night wins whenever it recorded one; otherwise the longest sleep wins.
+ * One main night per wake-up day, the longest sleep. With a source (e.g.
+ * "Withings") only that app's sleep counts – everything else is ignored.
  */
-export function mainNights(sessions: SleepNight[], prefer = 'auto'): SleepNight[] {
+export function mainNights(sessions: SleepNight[], source = 'alle'): SleepNight[] {
   const byDay = new Map<string, SleepNight>();
-  const preferred = (s: SleepNight) => prefer !== 'auto' && s.source === prefer && s.minutesAsleep >= MIN_NIGHT_MIN;
   for (const s of sessions) {
+    if (source !== 'alle' && s.source !== source) continue;
     const existing = byDay.get(s.date);
-    if (!existing) byDay.set(s.date, s);
-    else if (preferred(s) !== preferred(existing)) {
-      if (preferred(s)) byDay.set(s.date, s);
-    } else if (s.minutesAsleep > existing.minutesAsleep) byDay.set(s.date, s);
+    if (!existing || s.minutesAsleep > existing.minutesAsleep) byDay.set(s.date, s);
   }
   return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
 }

@@ -114,7 +114,7 @@ function dailyAverage(list: HealthSample[]): DayValue[] {
 }
 
 /** Reads the last weeks of data from Health Connect. */
-export async function syncHealth(now = new Date(), sleepSource = 'auto'): Promise<HealthData> {
+export async function syncHealth(now = new Date(), sleepSource = 'Withings'): Promise<HealthData> {
   const errors: string[] = [];
   const end = now;
   const start30 = new Date(now.getTime() - 30 * 86_400_000);

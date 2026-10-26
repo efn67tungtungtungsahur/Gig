@@ -45,52 +45,52 @@ function lastDays(n: number): string[] {
   return Array.from({ length: n }, (_, i) => dayKey(addDays(today, i - n + 1)));
 }
 
-/** Which apps deliver sleep, and which one wins when several record the same night. */
+/** Which apps deliver sleep, and which one counts. */
 function SleepSourcesCard() {
   const { data, settings, updateSettings } = useStore();
   const sessions = data.health.sleepSessions ?? data.health.sleep;
   const counts = sleepSourceCounts(sessions);
-  const withings = counts.find((c) => c.source === 'Withings');
   const current = settings.sleep.source;
-  const options = [
-    { value: 'auto', label: 'Automatisch' },
-    ...counts.map((c) => ({ value: c.source, label: c.source })),
-    ...(current !== 'auto' && !counts.some((c) => c.source === current) ? [{ value: current, label: current }] : []),
-  ];
+  const names = [...new Set(['Withings', 'Fitbit', ...counts.map((c) => c.source), ...(current !== 'alle' ? [current] : [])])];
+  const options = [...names.map((n) => ({ value: n, label: n })), { value: 'alle', label: 'Alle' }];
+  const chosen = counts.find((c) => c.source === current);
   return (
     <Card title="Schlafquellen" icon="🛏️">
-      {counts.length ? (
-        <ul className="list">
+      <div className="field" style={{ marginTop: 0 }}>
+        <span>Schlaf nur von</span>
+        <Segmented value={current} onChange={(v) => void updateSettings((s) => ({ ...s, sleep: { ...s.sleep, source: v } }))} options={options} />
+        <span className="tiny muted">
+          {current === 'alle' ? 'Alle Apps zählen, pro Nacht die Messung mit dem meisten Schlaf.' : `Nur ${current} zählt – Schlaf von anderen Apps wird komplett ignoriert.`}
+        </span>
+      </div>
+      {counts.length > 0 && (
+        <ul className="list" style={{ marginTop: 10 }}>
           {counts.map((c) => (
             <li key={c.source} className="row small">
               <span className="grow strong">{c.source}</span>
-              <span className="muted">{c.nights} Nächte in 30 Tagen</span>
+              <span className="muted">
+                {c.nights} Nächte in 30 Tagen{current !== 'alle' && c.source !== current ? ' · ignoriert' : ''}
+              </span>
             </li>
           ))}
         </ul>
-      ) : (
-        <p className="small muted" style={{ marginTop: 0 }}>
-          Noch keine Schlafdaten aus Health Connect.
-        </p>
       )}
-      {options.length > 2 && (
-        <div className="field" style={{ marginTop: 10 }}>
-          <span>Welche Quelle zählt, wenn mehrere dieselbe Nacht messen?</span>
-          <Segmented value={current} onChange={(v) => void updateSettings((s) => ({ ...s, sleep: { ...s.sleep, source: v } }))} options={options} />
-          <span className="tiny muted">Automatisch nimmt die Messung mit dem meisten Schlaf.</span>
-        </div>
-      )}
-      {!withings && (
+      {current !== 'alle' && !chosen && (
         <div className="banner warn small" style={{ marginTop: 10 }}>
           <span aria-hidden>⚠️</span>
           <span>
-            Von Withings kommt kein Schlaf an. So schaltest du es frei:
-            <br />
-            1. Withings-App → Profil → Apps &amp; Geräte verbinden → Health Connect: auch „Schlaf“ teilen.
-            <br />
-            2. Android-Einstellungen → Health Connect → App-Berechtigungen: Withings darf „Schlaf“ schreiben, Gig Fit darf „Schlaf“ lesen.
-            <br />
-            3. Gerät (z. B. Sleep Analyzer oder Uhr) mit der Withings-App synchronisieren, dann hier oben auf Aktualisieren tippen.
+            Von {current} kommt noch kein Schlaf an.
+            {current === 'Withings' && (
+              <>
+                {' '}So schaltest du es frei:
+                <br />
+                1. Withings-App → Profil → Apps &amp; Geräte verbinden → Health Connect: auch „Schlaf“ teilen.
+                <br />
+                2. Android-Einstellungen → Health Connect → App-Berechtigungen: Withings darf „Schlaf“ schreiben, Athlos darf „Schlaf“ lesen.
+                <br />
+                3. Gerät (z. B. Sleep Analyzer oder Uhr) mit der Withings-App synchronisieren, dann hier oben auf Aktualisieren tippen.
+              </>
+            )}
           </span>
         </div>
       )}
@@ -501,7 +501,7 @@ function TeethTab() {
           </button>
         </div>
         <p className="tiny muted" style={{ marginBottom: 0 }}>
-          Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots vom Verlauf – Gig Fit liest Datum, Dauer, Abdeckung und Druck
+          Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots vom Verlauf – Athlos liest Datum, Dauer, Abdeckung und Druck
           kostenlos auf dem Handy aus, du bestätigst vor dem Speichern.
         </p>
       </Card>

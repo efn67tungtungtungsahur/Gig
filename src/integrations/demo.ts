@@ -64,18 +64,18 @@ export function demoData(now = new Date()): AppData {
       rem: Math.round(asleep * (0.18 + noise(i, 5) * 0.05)),
       light: 0,
       awake,
-      source: 'Fitbit',
+      source: 'Withings',
     });
     const last = sleep[sleep.length - 1];
     last.light = asleep - (last.deep ?? 0) - (last.rem ?? 0);
   }
   d.health.sleep = sleep;
-  // Withings misst die letzten zwei Wochen mit – etwas anders als Fitbit.
-  const withings = sleep.slice(-14).map((n, i) => {
-    const asleep = n.minutesAsleep - 6 - Math.round(noise(i, 20) * 12);
-    return { ...n, start: new Date(new Date(n.start).getTime() + 5 * 60_000).toISOString(), minutesAsleep: asleep, light: (n.light ?? 0) - (n.minutesAsleep - asleep), source: 'Withings' };
+  // Die Fitbit hat die letzten zwei Wochen mitgemessen – wird aber ignoriert.
+  const fitbit = sleep.slice(-14).map((n, i) => {
+    const asleep = n.minutesAsleep + 6 + Math.round(noise(i, 20) * 12);
+    return { ...n, start: new Date(new Date(n.start).getTime() - 5 * 60_000).toISOString(), minutesAsleep: asleep, light: (n.light ?? 0) + (asleep - n.minutesAsleep), source: 'Fitbit' };
   });
-  d.health.sleepSessions = [...sleep, ...withings];
+  d.health.sleepSessions = [...sleep, ...fitbit];
   for (let i = 29; i >= 0; i--) {
     const day = addDays(today, -i);
     const key = dayKey(day);

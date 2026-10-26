@@ -26,7 +26,7 @@ const TABS: { route: Route; label: string; icon: typeof IconHome }[] = [
 ];
 
 const TITLES: Record<Route, string> = {
-  start: 'Gig Fit',
+  start: 'Athlos',
   kalender: 'Kalender & Schule',
   noten: 'Noten',
   training: 'Training',

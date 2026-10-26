@@ -1,28 +1,28 @@
-# Gig Fit – Fitness, Gesundheit & Schule in einer App
+# Athlos – Fitness, Gesundheit & Schule in einer App
 
-Gig Fit ist eine Android-App, die deinen **Google Kalender**, **Fitbit**, **Withings**, **Liftoff** (inkl. Rangliste & Errungenschaften) und deine **Oral-B iO** zusammenführt, alles auswertet und dir an einer Stelle zeigt.
+Athlos ist eine Android-App, die deinen **Google Kalender**, **Fitbit**, **Withings**, **Liftoff** (inkl. Rangliste & Errungenschaften) und deine **Oral-B iO** zusammenführt, alles auswertet und dir an einer Stelle zeigt.
 
 ## 📲 Herunterladen & installieren
 
 1. Öffne auf deinem Android-Handy diesen Link:
-   **https://github.com/efn67tungtungtungsahur/Gig/releases/download/fit-app-latest/GigFit.apk**
-   (oder auf GitHub unter **Releases → „Gig Fit – Android-App“ → Assets → `GigFit.apk`**).
+   **https://github.com/efn67tungtungtungsahur/Gig/releases/download/fit-app-latest/Athlos.apk**
+   (oder auf GitHub unter **Releases → „Athlos – Android-App“ → Assets → `Athlos.apk`**).
    Nicht verwechseln: Das Release „Gig – neueste Version“ (`app-latest`) gehört zu deinem Reddit-Bot-Projekt.
 2. Datei öffnen. Fragt Android nach „Unbekannte Apps installieren“, erlaube das für deinen Browser.
 3. Fertig. Neue Versionen installierst du genauso; sie überschreiben die alte, und deine Daten bleiben erhalten.
 
-> Die APK wird bei jeder Änderung automatisch von GitHub Actions gebaut (Workflow „Gig Fit – Android-App bauen“).
+> Die APK wird bei jeder Änderung automatisch von GitHub Actions gebaut (Workflow „Athlos – Android-App bauen“).
 > Voraussetzung: Android 8 oder neuer. Für Fitbit/Withings brauchst du **Health Connect** (ab Android 14 vorinstalliert, sonst aus dem Play Store).
 
 **iPhone:** Eine iOS-App lässt sich ohne Apple-Entwicklerkonto (99 €/Jahr) und App Store/TestFlight nicht verteilen. Der Code ist plattformübergreifend (Capacitor) und kann später für iOS gebaut werden.
 
 ## ✨ Funktionen
 
-| Bereich | Was Gig Fit macht |
+| Bereich | Was Athlos macht |
 |---|---|
 | **Übersicht** | Gesamt-Score und Scores pro Bereich (Schlaf, Aktivität, Körper, Training, Zahnpflege), nächste Tests/Klausuren, Ferien-Countdown, alle Daten einheitlich auf einen Blick |
 | **Schlaf** | Analyse von Dauer, Regelmäßigkeit, Effizienz und Tief-/REM-Schlaf. Sagt dir, ob du deinen Schlaf verbessern solltest, und schlägt eine Bettzeit vor. **Keine Schlaf-Erinnerungen in der Lernphase:** liegt laut Kalender eine Klausur in den nächsten 7 Tagen (einstellbar) oder steht „Lernen“ im Kalender, bleibt die Erinnerung aus |
-| **Meine Geräte** | Du wählst aus, welche Geräte du hast (nach Kategorien, mit Schnellauswahl). Gig Fit schlägt dann für jedes Training aus deinem Kalender („Push“, „Beine“, „Ganzkörper“ …) passende Übungen mit Sätzen, Wiederholungen und Pausen vor |
+| **Meine Geräte** | Du wählst aus, welche Geräte du hast (nach Kategorien, mit Schnellauswahl). Athlos schlägt dann für jedes Training aus deinem Kalender („Push“, „Beine“, „Ganzkörper“ …) passende Übungen mit Sätzen, Wiederholungen und Pausen vor |
 | **Training erfassen** | Starte das Training aus dem Vorschlag oder leer und trag für jede Übung die Sätze mit **Gewicht und Wiederholungen** ein. Die App zeigt, was du letztes Mal geschafft hast, schlägt das nächste Gewicht vor (hast du alle Sätze am oberen Ende geschafft → +2,5 kg), startet nach jedem Satz einen Pausen-Timer (mit Benachrichtigung) und meldet neue Rekorde. Verlauf aller Trainings und Fortschritts-Diagramm pro Übung |
 | **Körperübersicht** | Figur von vorne und hinten mit allen Muskelgruppen in drei Ansichten: **Beanspruchung** (Energie pro Muskel in Gelb: blassgelb = Energie raus, lieber Pause; tiefgelb = voll erholt, kann richtig beansprucht werden – mit Zeit bis er wieder belastbar ist), **Woche** (Sätze pro Muskel in 7 Tagen, Ziel 10–20) und **Ränge**. Jeder Muskel bekommt einen Rang von **Holz III über Bronze, Silber, Gold, Platin, Diamant und Champion bis Olympionike I** – jeder Rang mit eigener Farbe, der Olympionike schimmert holografisch – aus deiner stärksten Übung im Verhältnis zum Körpergewicht, dazu ein Gesamt-Rang, das nächste Ziel („Für Gold I: Latzug 65 kg × 10“) und Hinweise zu Ungleichgewichten |
 | **Noten** | Notenpunkte für 1.–4. Halbjahr wie in Notan: Fachschnitt, Halbjahresschnitt (LK zählen doppelt), Block I nach § 30 GOSTV Brandenburg (8 LK-Halbjahre doppelt + 28 Grundkurse, E I = P ÷ 44 × 40) und Abi-Prognose. Klausur-Anteil pro Fach einstellbar |
@@ -39,23 +39,23 @@ Ohne Konten kannst du alles im **Demo-Modus** ausprobieren.
 ## 🔌 Einrichtung (in der App unter „Einstellungen“)
 
 ### Google Kalender
-Google Kalender im Browser öffnen → ⚙️ **Einstellungen** → links deinen Kalender wählen → **Kalender integrieren** → **„Geheime Adresse im iCal-Format“** kopieren → in Gig Fit einfügen. Mehrere Kalender (Schule, privat) gehen auch.
+Google Kalender im Browser öffnen → ⚙️ **Einstellungen** → links deinen Kalender wählen → **Kalender integrieren** → **„Geheime Adresse im iCal-Format“** kopieren → in Athlos einfügen. Mehrere Kalender (Schule, privat) gehen auch.
 
-Gig Fit erkennt Termine automatisch an Stichwörtern (anpassbar):
+Athlos erkennt Termine automatisch an Stichwörtern (anpassbar):
 - **Klausur:** „Klausur“, „Prüfung“, „Abitur“
 - **Test:** „Test“, „Leistungskontrolle“, „Kontrolle“, „Klassenarbeit“, „Quiz“
 - **Training:** „Training“, „Gym“, „Push“, „Pull“, „Beine“, „Oberkörper“, „Ganzkörper“, „Cardio“ …
 - **Lernen:** „Lernen“, „Lernzeit“, „Klausurvorbereitung“ …
 
 ### Fitbit & Withings → über Health Connect
-Google schaltet die alte Fitbit-Web-API am **30.10.2026** ab. Gig Fit liest deshalb über **Health Connect**; dafür brauchst du kein Entwicklerkonto:
+Google schaltet die alte Fitbit-Web-API am **30.10.2026** ab. Athlos liest deshalb über **Health Connect**; dafür brauchst du kein Entwicklerkonto:
 1. **Fitbit-App** → Profil → Einstellungen → **Health Connect** → Synchronisierung an.
-2. **Withings-App (Health Mate)** → Profil → **Apps & Geräte verbinden** → **Health Connect** an. Für Schlafdaten dort auch **Schlaf** teilen. Zeichnen Fitbit und Withings dieselbe Nacht auf, legst du unter Gesundheit → Schlaf → **Schlafquellen** fest, welche zählt.
-3. In Gig Fit auf **Verbinden** tippen und die Leseberechtigungen erlauben.
+2. **Withings-App (Health Mate)** → Profil → **Apps & Geräte verbinden** → **Health Connect** an. Für Schlafdaten dort auch **Schlaf** teilen. Für den Schlaf zählt standardmäßig **nur Withings** – Fitbit-Schlaf wird ignoriert. Ändern kannst du das unter Gesundheit → Schlaf → **Schlafquellen**.
+3. In Athlos auf **Verbinden** tippen und die Leseberechtigungen erlauben.
 
 ### Liftoff
 - **Rangliste, Rang & Errungenschaften:** Mach in der Liftoff-App Screenshots davon und importiere sie im Tab **Training**. Die Texterkennung auf dem Handy liest Platz, XP, Level, Serie, Rangliste und Errungenschaften aus; du prüfst die Werte vor dem Speichern. Alternativ kannst du sie von Hand eintragen.
-- **Workouts (experimentell):** Anmeldung mit deinem Liftoff-Login (E-Mail und Passwort, nicht „Mit Google anmelden“). Liftoff hat keine offizielle Schnittstelle. Gig Fit nutzt dieselbe Schnittstelle wie die Liftoff-App, deshalb kann das jederzeit aufhören zu funktionieren. Gespeichert wird nur ein Anmelde-Token, nicht dein Passwort.
+- **Workouts (experimentell):** Anmeldung mit deinem Liftoff-Login (E-Mail und Passwort, nicht „Mit Google anmelden“). Liftoff hat keine offizielle Schnittstelle. Athlos nutzt dieselbe Schnittstelle wie die Liftoff-App, deshalb kann das jederzeit aufhören zu funktionieren. Gespeichert wird nur ein Anmelde-Token, nicht dein Passwort.
 
 ### Training erfassen
 Im Tab **Training** auf **„▶ … starten“** tippen. Das Training läuft weiter, auch wenn du die App schließt; auf der Übersicht erscheint dann „Training läuft“.
@@ -88,10 +88,10 @@ Im Tab **Noten** sind deine Fächer schon angelegt (Englisch und Chemie als LK).
 Tests und Klausuren aus dem Kalender, für die noch keine Note eingetragen ist, erscheinen als „Punkte eintragen“. Nach einer und nach zwei Wochen erinnert dich die App daran.
 
 ### Kosten
-Gig Fit braucht **kein Konto und keinen API-Schlüssel**, und es fallen **keine Kosten** an. Die Texterkennung für Liftoff- und Oral-B-Screenshots (Google ML Kit) ist in der App enthalten und läuft offline.
+Athlos braucht **kein Konto und keinen API-Schlüssel**, und es fallen **keine Kosten** an. Die Texterkennung für Liftoff- und Oral-B-Screenshots (Google ML Kit) ist in der App enthalten und läuft offline.
 
 ## 🔒 Datenschutz
-Gig Fit hat keinen eigenen Server. Alle Daten liegen nur auf deinem Handy. Nach außen gehen ausschließlich Anfragen an deine eigenen Dienste (Kalender-Link, Liftoff), und an die OpenHolidays-API (Ferientermine). Screenshots verlassen das Handy nicht.
+Athlos hat keinen eigenen Server. Alle Daten liegen nur auf deinem Handy. Nach außen gehen ausschließlich Anfragen an deine eigenen Dienste (Kalender-Link, Liftoff), und an die OpenHolidays-API (Ferientermine). Screenshots verlassen das Handy nicht.
 
 ## 🛠️ Entwicklung
 

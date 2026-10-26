@@ -1,4 +1,4 @@
-name: Gig Fit – Android-App bauen
+name: Athlos – Android-App bauen
 
 on:
   push:
@@ -94,12 +94,12 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: APK umbenennen
-        run: cp android/app/build/outputs/apk/release/app-release.apk GigFit.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk Athlos.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: GigFit-APK
-          path: GigFit.apk
+          name: Athlos-APK
+          path: Athlos.apk
 
       # Own release channel (tag fit-app-latest). It is never marked as the
       # repository's "latest" release, so other projects' releases stay untouched.
@@ -112,12 +112,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: fit-app-latest
-          name: Gig Fit – Android-App (Build ${{ github.run_number }})
+          name: Athlos – Android-App (Build ${{ github.run_number }})
           make_latest: false
           body: |
-            📱 **Gig Fit für Android** – Build ${{ github.run_number }} vom Commit ${{ github.sha }}.
+            📱 **Athlos für Android** – Build ${{ github.run_number }} vom Commit ${{ github.sha }}.
 
-            **Installieren:** `GigFit.apk` unten unter „Assets“ auf dem Handy herunterladen, öffnen und „Installation aus unbekannten Quellen“ für deinen Browser erlauben.
+            **Installieren:** `Athlos.apk` unten unter „Assets“ auf dem Handy herunterladen, öffnen und „Installation aus unbekannten Quellen“ für deinen Browser erlauben.
             Neue Versionen installieren sich über die alte – deine Daten bleiben erhalten.
 
       # Swap the APK with almost no gap: upload under a temporary name first,
@@ -127,10 +127,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp GigFit.apk GigFit-neu.apk
-          gh release upload fit-app-latest GigFit-neu.apk --clobber --repo "$GITHUB_REPOSITORY"
+          cp Athlos.apk Athlos-neu.apk
+          gh release upload fit-app-latest Athlos-neu.apk --clobber --repo "$GITHUB_REPOSITORY"
           assets=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/fit-app-latest" --jq '.assets[] | "\(.name) \(.id)"')
-          old=$(echo "$assets" | awk '$1=="GigFit.apk"{print $2}')
-          new=$(echo "$assets" | awk '$1=="GigFit-neu.apk"{print $2}')
-          if [ -n "$old" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old"; fi
-          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new" -f name=GigFit.apk
+          new=$(echo "$assets" | awk '$1=="Athlos-neu.apk"{print $2}')
+          # Remove the previous APK (also the old GigFit.apk from before the rename).
+          for old in $(echo "$assets" | awk '$1=="Athlos.apk" || $1=="GigFit.apk"{print $2}'); do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old"
+          done
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new" -f name=Athlos.apk

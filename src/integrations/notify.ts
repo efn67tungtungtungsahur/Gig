@@ -77,7 +77,7 @@ export async function sendTestNotification(): Promise<boolean> {
       {
         id: 1,
         title: '✅ Benachrichtigungen funktionieren',
-        body: 'So sehen deine Erinnerungen von Gig Fit aus.',
+        body: 'So sehen deine Erinnerungen von Athlos aus.',
         channelId: 'bericht',
         schedule: { at: new Date(Date.now() + 3000), allowWhileIdle: true },
         smallIcon: 'ic_stat_gig',

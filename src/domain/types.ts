@@ -310,7 +310,7 @@ export interface Settings {
     learningPhaseDays: number;
     /** Also pause sleep reminders before tests, not only Klausuren. */
     pauseForTests: boolean;
-    /** Source that wins when several record the same night ('auto' = longest sleep). */
+    /** Only sleep from this app counts (e.g. 'Withings'); 'alle' = every source, longest sleep wins. */
     source: string;
   };
   holidays: {

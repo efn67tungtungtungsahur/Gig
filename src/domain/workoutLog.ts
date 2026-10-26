@@ -224,7 +224,7 @@ export function toWorkoutEntry(w: LoggedWorkout): WorkoutEntry {
     end,
     type: 'strength',
     durationMin: workoutDurationMin(w, new Date(end)),
-    source: 'Gig Fit',
+    source: 'Athlos',
     title: w.title,
     exercises: w.exercises
       .filter((e) => doneSets(e).length)

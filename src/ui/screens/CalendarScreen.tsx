@@ -33,7 +33,7 @@ export default function CalendarScreen() {
       {!settings.icsUrls.length && !settings.demoMode && (
         <Card title="Google Kalender verbinden" icon="📅">
           <p className="small secondary" style={{ marginTop: 0 }}>
-            Füge die „Geheime Adresse im iCal-Format“ deines Google Kalenders ein. Gig Fit erkennt dann automatisch Tests, Klausuren, Trainings und
+            Füge die „Geheime Adresse im iCal-Format“ deines Google Kalenders ein. Athlos erkennt dann automatisch Tests, Klausuren, Trainings und
             Lernzeiten.
           </p>
           <button className="btn primary block" onClick={() => go('einstellungen')}>

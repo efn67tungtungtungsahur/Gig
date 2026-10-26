@@ -97,7 +97,7 @@ describe('workout log', () => {
     const r = buildReport(data, settings, now);
     expect(r.trainingStreak.current).toBe(1);
     expect(r.trainingStreak.sessions[0]).toMatchObject({ status: 'done', auto: true });
-    expect(r.training.workouts[0].source).toBe('Gig Fit');
+    expect(r.training.workouts[0].source).toBe('Athlos');
     expect(classifyAll([ev], settings.keywords)[0].kind).toBe('training');
   });
 });

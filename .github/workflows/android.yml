@@ -1,4 +1,4 @@
-name: Android-App bauen
+name: Gig Fit – Android-App bauen
 
 on:
   push:
@@ -43,8 +43,6 @@ jobs:
           java-version: 21
           cache: gradle
 
-      - uses: android-actions/setup-android@v3
-
       # Signing key: either your own from repository secrets (GIG_KEYSTORE_BASE64,
       # GIG_KEYSTORE_PASSWORD, optional GIG_KEY_ALIAS / GIG_KEY_PASSWORD), or one
       # generated on the first run and kept in the Actions cache – never in the repo.
@@ -69,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.gig-signing
-          key: gig-signing-key-v1
+          key: gigfit-signing-key-v1
 
       - name: Signaturschlüssel vorbereiten
         if: env.KEYSTORE_B64 == ''
@@ -79,7 +77,7 @@ jobs:
             openssl rand -hex 24 > ~/.gig-signing/pass
             PASS="$(cat ~/.gig-signing/pass)"
             keytool -genkeypair -noprompt -keystore ~/.gig-signing/gig.jks -storetype PKCS12 -alias gig \
-              -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=Gig App, O=Gig, C=DE"
+              -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=Gig Fit, O=Gig Fit, C=DE"
             echo "Neuer Signaturschlüssel erzeugt."
           fi
           PASS="$(cat ~/.gig-signing/pass)"
@@ -96,27 +94,29 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: APK umbenennen
-        run: cp android/app/build/outputs/apk/release/app-release.apk Gig.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk GigFit.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Gig-APK
-          path: Gig.apk
+          name: GigFit-APK
+          path: GigFit.apk
 
+      # Own release channel (tag fit-app-latest). It is never marked as the
+      # repository's "latest" release, so other projects' releases stay untouched.
       - name: Tag auf aktuellen Stand setzen
         run: |
-          git tag -f app-latest
-          git push -f origin app-latest
+          git tag -f fit-app-latest
+          git push -f origin fit-app-latest
 
       - name: Als Release veröffentlichen
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: app-latest
-          name: Gig – neueste Version (Build ${{ github.run_number }})
-          make_latest: true
-          files: Gig.apk
+          tag_name: fit-app-latest
+          name: Gig Fit – Android-App (Build ${{ github.run_number }})
+          make_latest: false
+          files: GigFit.apk
           body: |
-            📱 **Gig für Android** – Build ${{ github.run_number }} vom Commit ${{ github.sha }}.
+            📱 **Gig Fit für Android** – Build ${{ github.run_number }} vom Commit ${{ github.sha }}.
 
-            **Installieren:** `Gig.apk` unten unter „Assets“ auf dem Handy herunterladen, öffnen und „Installation aus unbekannten Quellen“ für deinen Browser erlauben.
-            Neue Versionen installieren sich einfach über die alte – deine Daten bleiben erhalten.
+            **Installieren:** `GigFit.apk` unten unter „Assets“ auf dem Handy herunterladen, öffnen und „Installation aus unbekannten Quellen“ für deinen Browser erlauben.
+            Neue Versionen installieren sich über die alte – deine Daten bleiben erhalten.

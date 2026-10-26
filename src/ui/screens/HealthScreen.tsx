@@ -352,7 +352,7 @@ function TeethTab() {
           </button>
         </div>
         <p className="tiny muted" style={{ marginBottom: 0 }}>
-          Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots vom Verlauf/der Putzübersicht – Gig liest Dauer, Abdeckung und Druck
+          Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots vom Verlauf/der Putzübersicht – Gig Fit liest Dauer, Abdeckung und Druck
           automatisch aus.
         </p>
       </Card>

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'de.gig.app',
-  appName: 'Gig',
+  appName: 'Gig Fit',
   webDir: 'dist',
   android: {
     backgroundColor: '#0e1116',

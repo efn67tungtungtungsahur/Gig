@@ -30,9 +30,9 @@ export default function Dashboard() {
   return (
     <>
       {!settings.welcomeDone && nothingConnected && !settings.demoMode && (
-        <Card title="Willkommen bei Gig 👋">
+        <Card title="Willkommen bei Gig Fit 👋">
           <p className="secondary" style={{ marginTop: 0 }}>
-            Gig bündelt deinen Google Kalender, Fitbit, Withings, Liftoff und deine Oral-B iO an einem Ort, wertet alles aus und erinnert dich an
+            Gig Fit bündelt deinen Google Kalender, Fitbit, Withings, Liftoff und deine Oral-B iO an einem Ort, wertet alles aus und erinnert dich an
             Tests, Klausuren und Ferien.
           </p>
           <div className="row wrap">

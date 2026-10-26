@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Gig</string>
-    <string name="title_activity_main">Gig</string>
+    <string name="app_name">Gig Fit</string>
+    <string name="title_activity_main">Gig Fit</string>
     <string name="package_name">de.gig.app</string>
     <string name="custom_url_scheme">de.gig.app</string>
 </resources>

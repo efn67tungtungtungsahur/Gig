@@ -132,7 +132,7 @@ export default function SettingsScreen() {
 
       <Card title="Fitbit & Withings (Health Connect)" icon="❤️">
         <p className="small secondary" style={{ marginTop: 0 }}>
-          Google schaltet die Fitbit-Web-API am 30.10.2026 ab. Gig liest deshalb über <strong>Health Connect</strong> – das geht ohne
+          Google schaltet die Fitbit-Web-API am 30.10.2026 ab. Gig Fit liest deshalb über <strong>Health Connect</strong> – das geht ohne
           Entwickler-Konto:
         </p>
         <ol className="bullets small secondary">
@@ -202,7 +202,7 @@ export default function SettingsScreen() {
 
       <Card title="Oral-B iO" icon="🪥">
         <p className="small secondary" style={{ margin: 0 }}>
-          Oral-B hat keine offene Schnittstelle. Importiere Screenshots aus der Oral-B-App (Gesundheit → Zähne) oder trage Putzvorgänge ein – Gig
+          Oral-B hat keine offene Schnittstelle. Importiere Screenshots aus der Oral-B-App (Gesundheit → Zähne) oder trage Putzvorgänge ein – Gig Fit
           wertet Häufigkeit, Dauer, Abdeckung und Druck aus.
         </p>
       </Card>
@@ -355,7 +355,7 @@ export default function SettingsScreen() {
           </button>
         </div>
         <p className="tiny muted" style={{ marginBottom: 0 }}>
-          Alle Daten bleiben auf deinem Handy. Gig hat keinen eigenen Server. Version {__APP_VERSION__}.
+          Alle Daten bleiben auf deinem Handy. Gig Fit hat keinen eigenen Server. Version {__APP_VERSION__}.
         </p>
       </Card>
     </>

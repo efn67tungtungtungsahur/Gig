@@ -59,3 +59,11 @@ export const IconChart = (p: P) => (
     <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
   </svg>
 );
+
+export const IconGrades = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M2.5 9 12 4.5 21.5 9 12 13.5Z" />
+    <path d="M6.5 11v4.5c0 1.4 2.5 3 5.5 3s5.5-1.6 5.5-3V11" />
+    <path d="M21.5 9v5" />
+  </svg>
+);

@@ -5,6 +5,7 @@ import { signed } from '../../domain/report';
 import { daysBetween, formatMinutes, formatShort, formatTime, relativeDays } from '../../lib/dates';
 import { useStore } from '../../lib/store';
 import { Card, Empty, ScoreRing, Stat, Status, scoreLevel, toast } from '../components';
+import { GradeCircle } from './GradesScreen';
 import { useNav } from '../nav';
 
 export default function Dashboard() {
@@ -68,9 +69,9 @@ export default function Dashboard() {
             </Status>
           </div>
         </div>
-        <div className="row between" style={{ marginTop: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', justifyItems: 'center', rowGap: 12, marginTop: 14 }}>
           {report.areas.map((a) => (
-            <ScoreRing key={a.key} score={a.score} size={54} label={a.label} />
+            <ScoreRing key={a.key} score={a.score} size={58} label={a.label} />
           ))}
         </div>
         <button className="btn block" style={{ marginTop: 14 }} onClick={() => go('bericht')}>
@@ -89,7 +90,30 @@ export default function Dashboard() {
         </div>
       )}
 
-      <Card title="Schule" icon="🎓" action={<button className="btn ghost" onClick={() => go('kalender')}>Alle</button>}>
+      <Card title="Noten" icon="🎓" action={<button className="btn ghost" onClick={() => go('noten')}>Öffnen</button>}>
+        <div className="row" style={{ marginBottom: 10 }}>
+          <GradeCircle value={report.grades.average} size={64} />
+          <div className="grow">
+            <div className="strong">{report.grades.semester}. Halbjahr</div>
+            <div className="small secondary">
+              {report.grades.forecast.grade !== undefined
+                ? `Abi-Prognose ${report.grades.forecast.grade.toFixed(1).replace('.', ',')} · Block I ≈ ${report.grades.forecast.blockI}/600`
+                : 'Noch keine Noten eingetragen'}
+            </div>
+          </div>
+        </div>
+        <div className="stats">
+          <Stat label="Noten-Serie" value={`${report.grades.streak.current > 0 ? '🔥' : ''}${report.grades.streak.current}`} delta={`ab ${settings.grades.streakMin} P. · Rekord ${report.grades.streak.best}`} />
+          <Stat label="Trainings-Serie" value={`${report.trainingStreak.current > 0 ? '🔥' : ''}${report.trainingStreak.current}`} delta={`nach Plan · Rekord ${report.trainingStreak.best}`} />
+        </div>
+        {report.grades.streak.pending.length > 0 && (
+          <button className="btn block" style={{ marginTop: 10 }} onClick={() => go('noten')}>
+            🎯 {report.grades.streak.pending.length} Note{report.grades.streak.pending.length === 1 ? '' : 'n'} eintragen
+          </button>
+        )}
+      </Card>
+
+      <Card title="Schule" icon="📅" action={<button className="btn ghost" onClick={() => go('kalender')}>Alle</button>}>
         <div className="row" style={{ alignItems: 'flex-end', marginBottom: 12 }}>
           {holidays.current ? (
             <div>
@@ -166,6 +190,7 @@ export default function Dashboard() {
         )}
         <div className="stats">
           <Stat label="Workouts (7 T.)" value={training.doneLast7} delta={training.plannedLast7 ? `${training.plannedLast7} geplant` : undefined} />
+          <Stat label="Serie" value={`${report.trainingStreak.current > 0 ? '🔥' : ''}${report.trainingStreak.current}`} delta="Trainings nach Plan" />
           {lift?.position !== undefined && (
             <Stat
               label="Liftoff-Platz"

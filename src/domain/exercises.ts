@@ -1,6 +1,6 @@
 import type { MuscleGroup } from './types';
 
-/** Equipment the room scan can detect. Ids are also the enum given to the AI. */
+/** Equipment you can pick under „Meine Geräte“; the planner matches exercises against it. */
 export const EQUIPMENT: Record<string, string> = {
   dumbbells: 'Kurzhanteln',
   barbell: 'Langhantel',
@@ -196,3 +196,23 @@ export function availableExercises(equipment: string[]): Exercise[] {
 export function equipmentLabel(id: string): string {
   return EQUIPMENT[id] ?? id;
 }
+
+/** Equipment grouped for the manual picker. */
+export const EQUIPMENT_GROUPS: { label: string; ids: string[] }[] = [
+  { label: 'Freihanteln', ids: ['dumbbells', 'barbell', 'ez_bar', 'weight_plates', 'kettlebell'] },
+  { label: 'Bänke & Racks', ids: ['bench', 'incline_bench', 'squat_rack', 'smith_machine', 'pullup_bar', 'dip_station', 'back_extension'] },
+  {
+    label: 'Kabel & Maschinen',
+    ids: ['cable_machine', 'lat_pulldown', 'seated_row', 'chest_press', 'pec_deck', 'shoulder_press_machine', 'leg_press', 'hack_squat', 'leg_extension', 'leg_curl', 'calf_machine', 'hip_abductor'],
+  },
+  { label: 'Ausdauer', ids: ['treadmill', 'bike', 'rower', 'elliptical', 'stair_climber', 'jump_rope', 'battle_ropes'] },
+  { label: 'Zubehör', ids: ['resistance_bands', 'trx', 'medicine_ball', 'plyo_box', 'mat', 'foam_roller', 'ab_wheel'] },
+];
+
+/** One-tap starting points for the picker. */
+export const EQUIPMENT_PRESETS: { label: string; ids: string[] }[] = [
+  { label: 'Nur Körpergewicht', ids: ['mat'] },
+  { label: 'Zuhause', ids: ['dumbbells', 'bench', 'mat', 'resistance_bands', 'pullup_bar', 'jump_rope'] },
+  { label: 'Home-Gym', ids: ['dumbbells', 'barbell', 'weight_plates', 'kettlebell', 'bench', 'incline_bench', 'squat_rack', 'pullup_bar', 'mat', 'resistance_bands'] },
+  { label: 'Fitnessstudio', ids: EQUIPMENT_IDS.filter((id) => !['trx', 'battle_ropes', 'ab_wheel', 'foam_roller'].includes(id)) },
+];

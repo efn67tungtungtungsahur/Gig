@@ -1,4 +1,6 @@
-import { addDays, atTime, dayKey, hashId, startOfDay } from '../lib/dates';
+import { addDays, addDaysKey, atTime, dayKey, formatShort, hashId, startOfDay } from '../lib/dates';
+import { eventDayKey } from './calendar';
+import { gradeForEvent } from './grades';
 import { biweeklyDates, holidayMessage } from './holidays';
 import { examReminders, learningPhase } from './reminders';
 import { weeklyDigest, type OverallReport } from './report';
@@ -81,7 +83,27 @@ export function buildNotificationPlan(
     }
   }
 
-  // 4) Gesamt-Update einmal pro Woche.
+  // 4) Note eintragen – eine und zwei Wochen nach einem Test/einer Klausur, solange keine Note da ist.
+  for (const e of report.events) {
+    if (e.kind !== 'klausur' && e.kind !== 'test') continue;
+    if (gradeForEvent(e, data.grades.grades, data.grades.subjects)) continue;
+    const day = eventDayKey(e);
+    for (const after of [7, 14]) {
+      const at = atTime(addDaysKey(day, after), '18:00');
+      if (at <= now || at > horizon) continue;
+      const what = e.kind === 'klausur' ? 'die Klausur' : 'den Test';
+      out.push({
+        id: hashId(`note|${e.id}|${after}`),
+        channel: 'pruefungen',
+        at,
+        title: `🎯 Note für ${e.subject ?? e.title} schon da?`,
+        body: `Trag die Punkte für ${what} vom ${formatShort(day)} ein – ab ${settings.grades.streakMin} Punkten hält deine Noten-Serie.`,
+        route: 'noten',
+      });
+    }
+  }
+
+  // 5) Gesamt-Update einmal pro Woche.
   if (settings.weeklyReport.enabled) {
     let day = startOfDay(now);
     for (let i = 0; i < 8; i++) {

@@ -22,7 +22,9 @@ Gig Fit ist eine Android-App, die deinen **Google Kalender**, **Fitbit**, **With
 |---|---|
 | **Übersicht** | Gesamt-Score und Scores pro Bereich (Schlaf, Aktivität, Körper, Training, Zahnpflege), nächste Tests/Klausuren, Ferien-Countdown, alle Daten einheitlich auf einen Blick |
 | **Schlaf** | Analyse von Dauer, Regelmäßigkeit, Effizienz und Tief-/REM-Schlaf. Sagt dir, ob du deinen Schlaf verbessern solltest, und schlägt eine Bettzeit vor. **Keine Schlaf-Erinnerungen in der Lernphase:** liegt laut Kalender eine Klausur in den nächsten 7 Tagen (einstellbar) oder steht „Lernen“ im Kalender, bleibt die Erinnerung aus |
-| **Raum-Scan** | Fotografiere deinen Trainingsraum. Die Bilderkennung auf dem Handy erkennt die sichtbaren Geräte, du bestätigst sie kurz. Gig Fit schlägt dann für jedes Training aus deinem Kalender („Push“, „Beine“, „Ganzkörper“ …) passende Übungen mit Sätzen, Wiederholungen und Pausen vor |
+| **Meine Geräte** | Du wählst aus, welche Geräte du hast (nach Kategorien, mit Schnellauswahl). Gig Fit schlägt dann für jedes Training aus deinem Kalender („Push“, „Beine“, „Ganzkörper“ …) passende Übungen mit Sätzen, Wiederholungen und Pausen vor |
+| **Noten** | Notenpunkte für 1.–4. Halbjahr wie in Notan: Fachschnitt, Halbjahresschnitt (LK zählen doppelt), Block I nach § 30 GOSTV Brandenburg (8 LK-Halbjahre doppelt + 28 Grundkurse, E I = P ÷ 44 × 40) und Abi-Prognose. Klausur-Anteil pro Fach einstellbar |
+| **Serien** | **Noten-Serie:** Tests und Klausuren ab 13 Punkten in Folge. **Trainings-Serie:** geplante Trainings in Folge durchgezogen. Beide laufen nicht nach einem Tag ab, sondern richten sich nach deinen Terminen im Kalender |
 | **Erinnerungen** | **Test:** 1 Woche, 3 Tage und 2 Tage vorher · **Klausur:** 2 Wochen, 1 Woche, 3 Tage und 2 Tage vorher (Uhrzeit und Abstände einstellbar) |
 | **Ferien** | Alle 2 Wochen eine Benachrichtigung, wie viele Tage (und Schultage) es noch bis zu den nächsten Ferien in Brandenburg sind |
 | **Gesamt-Update** | Wöchentliche Benachrichtigung plus Bericht mit Stärken, Verbesserungen, den nächsten Tagen und einer Zusammenfassung mit drei konkreten nächsten Schritten |
@@ -56,14 +58,18 @@ Google schaltet die alte Fitbit-Web-API am **30.10.2026** ab. Gig Fit liest desh
 ### Oral-B iO
 Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots von Verlauf und Putzübersicht und importiere sie unter **Gesundheit → Zähne**, oder tippe nach dem Putzen auf **„Gerade geputzt“**.
 
-### Bilderkennung (kostenlos, auf dem Handy)
-Gig Fit braucht **kein Konto und keinen API-Schlüssel**, und es fallen **keine Kosten** an:
-- **Texterkennung** für Liftoff- und Oral-B-Screenshots: Google ML Kit. Ist in der App enthalten und läuft offline.
-- **Raum-Scan:** das offene Modell MobileCLIP. Es wird beim ersten Scan einmalig kostenlos von Hugging Face geladen (WLAN empfohlen) und läuft danach offline. Unter Einstellungen → „Bilderkennung“ kannst du es auch vorab laden.
-Nicht jedes Gerät wird sicher erkannt. Deshalb zeigt die App die Treffer mit Prozentangabe an, und du bestätigst sie oder ergänzt Geräte von Hand.
+### Noten
+Im Tab **Noten** sind deine Fächer schon angelegt (Englisch und Chemie als LK). Über ⚙️ kannst du Fächer ergänzen, den LK umstellen und festlegen, wie Klausuren zählen:
+- **Alle gleich:** Durchschnitt aller Noten, so wie Notan rechnet (Standard)
+- **Klausur ⅓ oder ½:** In Brandenburg legt die Lehrkraft die Gewichtung zu Kursbeginn fest (§ 12 GOSTV), oft zu einem Drittel. Pro Fach kannst du einen eigenen Anteil wählen.
+
+Tests und Klausuren aus dem Kalender, für die noch keine Note eingetragen ist, erscheinen als „Punkte eintragen“. Nach einer und nach zwei Wochen erinnert dich die App daran.
+
+### Kosten
+Gig Fit braucht **kein Konto und keinen API-Schlüssel**, und es fallen **keine Kosten** an. Die Texterkennung für Liftoff- und Oral-B-Screenshots (Google ML Kit) ist in der App enthalten und läuft offline.
 
 ## 🔒 Datenschutz
-Gig Fit hat keinen eigenen Server. Alle Daten liegen nur auf deinem Handy. Nach außen gehen ausschließlich Anfragen an deine eigenen Dienste (Kalender-Link, Liftoff), an die OpenHolidays-API (Ferientermine) und einmalig an Hugging Face (Download des Erkennungsmodells). Fotos und Screenshots verlassen das Handy nicht.
+Gig Fit hat keinen eigenen Server. Alle Daten liegen nur auf deinem Handy. Nach außen gehen ausschließlich Anfragen an deine eigenen Dienste (Kalender-Link, Liftoff), und an die OpenHolidays-API (Ferientermine). Screenshots verlassen das Handy nicht.
 
 ## 🛠️ Entwicklung
 
@@ -71,14 +77,13 @@ Gig Fit hat keinen eigenen Server. Alle Daten liegen nur auf deinem Handy. Nach 
 npm install
 npm run dev        # Web-Vorschau im Browser (Demo-Modus)
 npm test           # Unit-Tests der Auswertungslogik
-node scripts/e2e-scan.mjs <url>   # Raum-Scan gegen echte Fotos (läuft auch als GitHub-Workflow)
 npm run build      # Typecheck + Web-Build
 npx cap sync android && cd android && ./gradlew assembleRelease
 ```
 
 Aufbau:
-- `src/domain/`: reine Logik (Kalender-Erkennung, Erinnerungen, Ferien, Schlafanalyse, Trainingsplaner, Gesamtbericht, Benachrichtigungsplan), komplett getestet in `tests/`
-- `src/integrations/`: Health Connect, iCal, Bilderkennung (transformers.js), Texterkennung (ML Kit), Liftoff, Benachrichtigungen, Kamera
+- `src/domain/`: reine Logik (Kalender-Erkennung, Erinnerungen, Ferien, Schlafanalyse, Trainingsplaner, Noten & Abi-Berechnung, Serien, Gesamtbericht, Benachrichtigungsplan), getestet in `tests/`
+- `src/integrations/`: Health Connect, iCal, Texterkennung (ML Kit), Liftoff, Benachrichtigungen
 - `src/ui/`: Oberfläche (React)
 - `android/`: Capacitor-Android-Projekt
 

@@ -9,8 +9,6 @@ import { healthAvailability, openHealthConnect, requestHealthPermissions } from 
 import { isNative } from '../../integrations/http';
 import { liftoffLogin } from '../../integrations/liftoffApi';
 import { sendTestNotification } from '../../integrations/notify';
-import { isVisionModelCached, preloadVisionModel } from '../../integrations/vision';
-import type { VisionProgress } from '../../integrations/visionEngine';
 import { Card, Segmented, Switch, toast, useAction } from '../components';
 
 function parseOffsets(text: string): number[] {
@@ -31,12 +29,9 @@ export default function SettingsScreen() {
   const [hcState, setHcState] = useState<{ available: boolean; reason?: string } | null>(null);
   const [liftEmail, setLiftEmail] = useState(settings.liftoff.email);
   const [liftPassword, setLiftPassword] = useState('');
-  const [modelCached, setModelCached] = useState<boolean | null>(null);
-  const [modelProgress, setModelProgress] = useState<VisionProgress | null>(null);
 
   useEffect(() => {
     void healthAvailability().then(setHcState);
-    void isVisionModelCached().then(setModelCached);
   }, []);
 
   const set = (fn: (s: Settings) => Settings) => void updateSettings(fn);
@@ -80,18 +75,6 @@ export default function SettingsScreen() {
       setLiftPassword('');
       const sync = await syncAll();
       toast(sync.errors.find((e) => e.includes('Liftoff')) ?? 'Liftoff verbunden.');
-    });
-
-  const loadModel = () =>
-    run('model', async () => {
-      setModelProgress({ phase: 'laden', percent: 0 });
-      try {
-        await preloadVisionModel(setModelProgress);
-        setModelCached(true);
-        toast('Erkennungsmodell geladen – der Raum-Scan funktioniert jetzt auch offline.');
-      } finally {
-        setModelProgress(null);
-      }
     });
 
   const resetAll = () =>
@@ -215,25 +198,6 @@ export default function SettingsScreen() {
           Oral-B hat keine offene Schnittstelle. Importiere Screenshots aus der Oral-B-App (Gesundheit → Zähne) – die Texterkennung läuft auf dem
           Handy – oder trage Putzvorgänge ein. Gig Fit wertet Häufigkeit, Dauer, Abdeckung und Druck aus.
         </p>
-      </Card>
-
-      <Card title="Bilderkennung (kostenlos)" icon="📷">
-        <p className="small secondary" style={{ marginTop: 0 }}>
-          Raum-Scan und Screenshot-Import laufen direkt auf deinem Handy – ohne Konto, ohne Kosten. Für den Raum-Scan wird einmalig ein offenes
-          Erkennungsmodell (MobileCLIP) von Hugging Face geladen, danach funktioniert er offline. Die Texterkennung (Google ML Kit) ist schon in der App
-          enthalten.
-        </p>
-        {modelProgress ? (
-          <div className="banner info small">
-            Lade Modell … {modelProgress.percent} %
-          </div>
-        ) : modelCached ? (
-          <p className="small">✓ Erkennungsmodell ist auf dem Handy.</p>
-        ) : (
-          <button className="btn block" onClick={loadModel} disabled={busy !== null}>
-            Modell jetzt laden (WLAN empfohlen)
-          </button>
-        )}
       </Card>
 
       <div className="section-title">Erinnerungen</div>

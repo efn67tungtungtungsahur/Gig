@@ -132,7 +132,7 @@ export function planTraining(
   }
 
   if (equipment.length === 0) {
-    hints.push('Noch kein Raum gescannt – der Plan nutzt nur Körpergewichtsübungen. Scanne deinen Trainingsraum für bessere Vorschläge.');
+    hints.push('Noch keine Geräte ausgewählt – der Plan nutzt nur Körpergewichtsübungen. Wähle unter „Meine Geräte“ aus, was du hast.');
   }
   if (goal === 'muskelaufbau') hints.push('Steigere das Gewicht, sobald du alle Sätze am oberen Ende der Wiederholungen schaffst.');
 

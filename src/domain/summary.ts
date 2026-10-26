@@ -16,7 +16,7 @@ export function buildSummary(r: OverallReport, settings: Settings, now = new Dat
   if (r.overallScore === undefined) {
     return {
       text: 'Noch sind keine Daten verbunden. Sobald Kalender, Health Connect, Liftoff oder Oral-B dabei sind, bekommst du hier deine Auswertung.',
-      steps: ['Verbinde in den Einstellungen deinen Google Kalender.', 'Verbinde Fitbit und Withings über Health Connect.', 'Scanne deinen Trainingsraum im Tab „Training“.'],
+      steps: ['Verbinde in den Einstellungen deinen Google Kalender.', 'Verbinde Fitbit und Withings über Health Connect.', 'Wähle im Tab „Training“ unter „Meine Geräte“ aus, womit du trainierst.'],
     };
   }
 

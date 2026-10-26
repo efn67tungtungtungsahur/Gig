@@ -1,6 +1,27 @@
 import { dayKey } from '../lib/dates';
 import { BUNDLED_HOLIDAYS } from './holidays';
-import type { AppData, Settings } from './types';
+import type { AppData, Settings, Subject } from './types';
+
+/** The subjects from the Notan screenshot – Englisch and Chemie are the Leistungskurse. */
+export const DEFAULT_SUBJECTS: Subject[] = [
+  { id: 'musik', name: 'Musik', lk: false },
+  { id: 'englisch', name: 'Englisch', lk: true },
+  { id: 'geschichte', name: 'Geschichte', lk: false },
+  { id: 'mathematik', name: 'Mathematik', lk: false },
+  { id: 'physik', name: 'Physik', lk: false },
+  { id: 'chemie', name: 'Chemie', lk: true },
+  { id: 'deutsch', name: 'Deutsch', lk: false },
+  { id: 'biologie', name: 'Biologie', lk: false },
+  { id: 'erdkunde', name: 'Erdkunde', lk: false },
+  { id: 'sport', name: 'Sport', lk: false },
+  { id: 'politik', name: 'Politik', lk: false },
+  { id: 'seminarkurs', name: 'Seminarkurs', lk: false },
+];
+
+/** School year in which a date's Qualifikationsphase would have started (August cut-over). */
+function schoolYearStart(d: Date): number {
+  return d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
+}
 
 export const LIFTOFF_DEFAULT_API_BASE = 'https://v2-13-10.api.getgymbros.com';
 
@@ -48,6 +69,12 @@ export function defaultSettings(today = new Date()): Settings {
       email: '',
       refreshToken: '',
     },
+    grades: {
+      qPhaseStartYear: schoolYearStart(today),
+      weighting: 'gleich',
+      blockIGrundkurse: 28,
+      streakMin: 13,
+    },
     healthConnected: false,
     demoMode: false,
     welcomeDone: false,
@@ -73,6 +100,8 @@ export function emptyData(): AppData {
     oralb: { sessions: [] },
     gym: { equipment: [], photosScanned: 0 },
     holidays: { periods: BUNDLED_HOLIDAYS, source: 'eingebaut' },
+    grades: { subjects: DEFAULT_SUBJECTS.map((s) => ({ ...s })), grades: [] },
+    trainingLog: {},
   };
 }
 
@@ -92,6 +121,7 @@ export function mergeSettings(stored: Partial<Settings> | null | undefined, toda
     weeklyReport: { ...d.weeklyReport, ...rest.weeklyReport },
     training: { ...d.training, ...rest.training },
     liftoff: { ...d.liftoff, ...rest.liftoff },
+    grades: { ...d.grades, ...rest.grades },
   };
 }
 
@@ -108,5 +138,7 @@ export function mergeData(stored: Partial<AppData> | null | undefined): AppData 
     oralb: { ...d.oralb, ...rest.oralb },
     gym: { ...d.gym, ...rest.gym },
     holidays: rest.holidays?.periods?.length ? rest.holidays : d.holidays,
+    grades: { ...d.grades, ...rest.grades },
+    trainingLog: { ...rest.trainingLog },
   };
 }

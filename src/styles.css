@@ -785,3 +785,116 @@ textarea.input {
 .pre {
   white-space: pre-wrap;
 }
+
+/* ---------- Noten ---------- */
+
+.grade-circle {
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.grade-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  border: 0;
+}
+
+.grade-chip.typed::after {
+  content: attr(data-type);
+  font-size: 9px;
+  font-weight: 600;
+  margin-left: 3px;
+  opacity: 0.85;
+}
+
+.subject-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  width: 100%;
+  text-align: left;
+}
+
+.subject-row:first-child {
+  border-top: 0;
+}
+
+.subject-row .emoji {
+  font-size: 20px;
+  text-align: center;
+}
+
+.lk-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--page);
+  margin-left: 6px;
+  vertical-align: 2px;
+}
+
+.points-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.points-grid button {
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.points-grid button.on {
+  border-color: var(--text);
+}
+
+.streak {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.streak .flame {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.streak .count {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.seg-scroll {
+  overflow-x: auto;
+}
+
+.table td.num,
+.table th.num {
+  text-align: center;
+}

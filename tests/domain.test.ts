@@ -211,7 +211,9 @@ describe('notification plan', () => {
     // Klausur on 30.10. → learning phase until then; reminders resume from 31.10.
     expect(sleepDays.every((d) => d >= '2026-10-31')).toBe(true);
     expect(sleepDays.length).toBeGreaterThan(0);
-    expect(plan.filter((p) => p.channel === 'pruefungen').map((p) => dayKey(p.at))).toEqual(['2026-10-27', '2026-10-28']);
+    expect(plan.filter((p) => p.channel === 'pruefungen' && p.route === 'kalender').map((p) => dayKey(p.at))).toEqual(['2026-10-27', '2026-10-28']);
+    // Without a grade, reminders to enter it follow one and two weeks after the Klausur.
+    expect(plan.filter((p) => p.route === 'noten').map((p) => dayKey(p.at))).toEqual(['2026-11-06', '2026-11-13']);
     expect(plan.some((p) => p.channel === 'ferien')).toBe(true);
     expect(plan.filter((p) => p.channel === 'bericht')).toHaveLength(1);
     expect(new Set(plan.map((p) => p.id)).size).toBe(plan.length);

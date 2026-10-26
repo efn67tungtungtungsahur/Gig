@@ -5,10 +5,12 @@ import { summarizeLiftoff, type LiftoffSummary } from './liftoff';
 import { analyzeOralCare, type OralCareAnalysis } from './oralb';
 import { learningPhase, type LearningPhase } from './reminders';
 import { analyzeSleep, type SleepAnalysis } from './sleep';
-import type { AppData, BloodPressure, ClassifiedEvent, Measurement, Settings, WorkoutEntry } from './types';
+import { abiForecast, blockI, formatPoints, gradeStreak, semesterAverage, semesterForDate, type AbiForecast, type BlockI, type GradeStreak } from './grades';
+import { trainingStreak, type TrainingStreak } from './streaks';
+import type { AppData, BloodPressure, ClassifiedEvent, Measurement, Semester, Settings, WorkoutEntry } from './types';
 
 export interface AreaScore {
-  key: 'schlaf' | 'aktivitaet' | 'koerper' | 'training' | 'zaehne';
+  key: 'schlaf' | 'aktivitaet' | 'koerper' | 'training' | 'zaehne' | 'noten';
   label: string;
   score?: number; // undefined = keine Daten
   summary: string;
@@ -43,8 +45,18 @@ export interface TrainingAnalysis {
   workouts: WorkoutEntry[];
 }
 
+export interface GradesAnalysis {
+  semester: Semester;
+  average?: number;
+  blockI: BlockI;
+  forecast: AbiForecast;
+  streak: GradeStreak;
+}
+
 export interface OverallReport {
   generatedAt: string;
+  grades: GradesAnalysis;
+  trainingStreak: TrainingStreak;
   overallScore?: number;
   areas: AreaScore[];
   sleep: SleepAnalysis;
@@ -155,6 +167,20 @@ export function buildReport(data: AppData, settings: Settings, now = new Date())
     liftoff,
     workouts,
   };
+  const tStreak = trainingStreak(events, workouts, data.trainingLog, now);
+  const week = tStreak.sessions.filter((x) => daysBetween(eventDayKey(x.event), todayKey) < 7 && x.status !== 'pending');
+  const weekDone = week.filter((x) => x.status === 'done').length;
+
+  const semester = semesterForDate(now, settings.grades.qPhaseStartYear);
+  const { subjects, grades: gradeList } = data.grades;
+  const b1 = blockI(subjects, gradeList, settings.grades);
+  const gradesAnalysis: GradesAnalysis = {
+    semester,
+    average: semesterAverage(subjects, gradeList, semester, settings.grades),
+    blockI: b1,
+    forecast: abiForecast(b1),
+    streak: gradeStreak(gradeList, events, subjects, settings.grades.streakMin, now),
+  };
 
   const areas: AreaScore[] = [];
   areas.push({
@@ -189,15 +215,17 @@ export function buildReport(data: AppData, settings: Settings, now = new Date())
       ? `${body.latestWeight.value.toFixed(1).replace('.', ',')} kg${body.weightChange30 !== undefined ? ` (${signed(body.weightChange30, 1)} kg in 30 T.)` : ''}`
       : 'Keine Withings-Daten',
   });
-  const trainingScore =
-    workouts.length || plannedLast7
-      ? Math.round(clamp(plannedLast7 ? (training.doneLast7 / plannedLast7) * 100 : (training.doneLast7 / 3) * 100, 0, 100))
+  // Planned trainings that were done (calendar + workouts + manual ticks); without a plan, 3 workouts/week = 100.
+  const trainingScore = week.length
+    ? Math.round((weekDone / week.length) * 100)
+    : workouts.length
+      ? Math.round(clamp((training.doneLast7 / 3) * 100, 0, 100))
       : undefined;
   areas.push({
     key: 'training',
     label: 'Training',
     score: trainingScore,
-    summary: `${training.doneLast7} Workouts in 7 Tagen${plannedLast7 ? ` (${plannedLast7} geplant)` : ''}${
+    summary: `${week.length ? `${weekDone}/${week.length} geplante Trainings` : `${training.doneLast7} Workouts`} in 7 Tagen · Serie ${tStreak.current}${
       liftoff.latest?.position ? ` · Platz ${liftoff.latest.position}` : ''
     }`,
   });
@@ -208,6 +236,16 @@ export function buildReport(data: AppData, settings: Settings, now = new Date())
     summary: oral.hasData
       ? `${oral.sessionsPerDay.toFixed(1).replace('.', ',')}× täglich · Ø ${Math.round(oral.avgDurationSec)} s`
       : 'Keine Oral-B-Daten',
+  });
+
+  areas.push({
+    key: 'noten',
+    label: 'Noten',
+    score: gradesAnalysis.average !== undefined ? Math.round((gradesAnalysis.average / 15) * 100) : undefined,
+    summary:
+      gradesAnalysis.average !== undefined
+        ? `Ø ${formatPoints(gradesAnalysis.average)} Punkte im ${semester}. HJ · Serie ${gradesAnalysis.streak.current}`
+        : 'Noch keine Noten eingetragen',
   });
 
   const scored = areas.filter((a) => a.score !== undefined);
@@ -228,9 +266,16 @@ export function buildReport(data: AppData, settings: Settings, now = new Date())
   if (activity.hasData && activity.avgSteps < activity.goal * 0.8) {
     improvements.push(`Aktivität: ${activity.avgSteps.toLocaleString('de-DE')} statt ${activity.goal.toLocaleString('de-DE')} Schritte – ein 20-min-Spaziergang bringt ca. 2.500 Schritte.`);
   }
-  if (plannedLast7 > training.doneLast7) {
-    improvements.push(`Training: ${plannedLast7 - training.doneLast7} geplante Einheit(en) diese Woche nicht als Workout erfasst.`);
+  if (week.length > weekDone) {
+    improvements.push(`Training: ${week.length - weekDone} geplante Einheit(en) in den letzten 7 Tagen verpasst – im Tab „Training“ kannst du erledigte abhaken.`);
   }
+  for (const e of gradesAnalysis.streak.pending.slice(0, 2)) {
+    improvements.push(`Noten: Trag die Punkte für ${e.kind === 'klausur' ? 'die Klausur' : 'den Test'} ${e.subject ?? e.title} (${formatShort(eventDayKey(e))}) ein.`);
+  }
+  if (gradesAnalysis.streak.current >= 2) {
+    strengths.push(`Noten-Serie: ${gradesAnalysis.streak.current} Tests/Klausuren in Folge mit ${settings.grades.streakMin}+ Punkten 🔥`);
+  }
+  if (tStreak.current >= 3) strengths.push(`Trainings-Serie: ${tStreak.current} geplante Trainings in Folge durchgezogen 🔥`);
   if (oral.hasData && oral.score < 80) improvements.push(`Zahnpflege: ${oral.tips[0]}`);
   if (body.latestBp && body.bpCategory !== 'normal') {
     improvements.push(`Blutdruck zuletzt ${body.latestBp.systolic}/${body.latestBp.diastolic} (${body.bpCategory}).`);
@@ -249,6 +294,8 @@ export function buildReport(data: AppData, settings: Settings, now = new Date())
 
   return {
     generatedAt: now.toISOString(),
+    grades: gradesAnalysis,
+    trainingStreak: tStreak,
     overallScore,
     areas,
     sleep,

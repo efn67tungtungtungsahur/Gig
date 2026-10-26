@@ -148,6 +148,7 @@ export interface OralBData {
 
 export interface GymData {
   equipment: string[];
+  /** Last time the equipment list was changed. */
   scannedAt?: string;
   notes?: string;
   photosScanned: number;
@@ -171,6 +172,49 @@ export interface CalendarData {
   errors: string[];
 }
 
+export type GradeType = 'klausur' | 'test' | 'muendlich' | 'sonstige';
+export type Semester = 1 | 2 | 3 | 4;
+
+export interface Subject {
+  id: string;
+  name: string;
+  /** Leistungskurs – counts double. */
+  lk: boolean;
+  /** Own share of Klausuren in percent; null/undefined = global setting. */
+  klausurShare?: number | null;
+}
+
+export interface GradeEntry {
+  id: string;
+  subjectId: string;
+  points: number; // 0–15
+  type: GradeType;
+  date: string; // YYYY-MM-DD
+  semester: Semester;
+  /** Calendar exam this grade belongs to. */
+  eventId?: string;
+  note?: string;
+}
+
+export interface GradesData {
+  subjects: Subject[];
+  grades: GradeEntry[];
+}
+
+export interface GradeSettings {
+  /** Calendar year in which the 1. Halbjahr of the Qualifikationsphase starts (August). */
+  qPhaseStartYear: number;
+  /** gleich = all grades count the same (like Notan); drittel/haelfte = share of Klausuren. */
+  weighting: 'gleich' | 'drittel' | 'haelfte';
+  /** Grundkurs half-years counted in Block I (GOSTV: 28; older versions 30). */
+  blockIGrundkurse: number;
+  /** Minimum points that keep the grade streak alive. */
+  streakMin: number;
+}
+
+/** Manual status of a planned training (calendar event id → status). Abgesagt = counts neither way. */
+export type TrainingLog = Record<string, 'done' | 'missed' | 'skipped'>;
+
 export interface AppData {
   calendar: CalendarData;
   health: HealthData;
@@ -178,6 +222,8 @@ export interface AppData {
   oralb: OralBData;
   gym: GymData;
   holidays: HolidayData;
+  grades: GradesData;
+  trainingLog: TrainingLog;
 }
 
 export type TrainingGoal = 'muskelaufbau' | 'kraft' | 'ausdauer' | 'fitness';
@@ -223,6 +269,7 @@ export interface Settings {
     email: string;
     refreshToken: string;
   };
+  grades: GradeSettings;
   healthConnected: boolean;
   demoMode: boolean;
   welcomeDone: boolean;

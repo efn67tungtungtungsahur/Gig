@@ -1,6 +1,7 @@
 import { addDays, dayKey, startOfDay } from '../lib/dates';
 import { emptyData } from '../domain/defaults';
-import type { AppData, BrushSession, CalEvent, SleepNight, WorkoutEntry } from '../domain/types';
+import { semesterForDate } from '../domain/grades';
+import type { AppData, BrushSession, CalEvent, GradeEntry, GradeType, SleepNight, WorkoutEntry } from '../domain/types';
 
 /** Deterministic noise so the demo looks the same on every start. */
 function noise(i: number, salt: number): number {
@@ -38,6 +39,7 @@ export function demoData(now = new Date()): AppData {
   events.push(event('Lernen Mathe', at(addDays(today, 8), 15), 120));
   events.push(event('Klausur Deutsch', addDays(today, 20), 0, true));
   events.push(event('Bio-Test', at(addDays(today, 16), 8), 45));
+  events.push(event('Klausur Chemie', at(addDays(today, -5), 8), 90));
   d.calendar = { events: events.sort((a, b) => a.start.localeCompare(b.start)), syncedAt: now.toISOString(), errors: [] };
 
   // Gesundheit (Fitbit + Withings).
@@ -109,6 +111,8 @@ export function demoData(now = new Date()): AppData {
     });
   });
   d.liftoff.workouts = workouts;
+  // Cardio days were ticked off by hand in the demo.
+  for (const e of events) if (e.title === 'Cardio' && new Date(e.end) < now) d.trainingLog[e.id] = 'done';
   d.liftoff.snapshots = [
     {
       date: addDays(now, -9).toISOString(),
@@ -167,6 +171,24 @@ export function demoData(now = new Date()): AppData {
     }
   }
   d.oralb = { sessions, streakDays: 3, lastImport: now.toISOString() };
+
+  // Noten (fiktive Beispielwerte).
+  const startYear = today.getMonth() >= 7 ? today.getFullYear() : today.getFullYear() - 1;
+  const grade = (subjectId: string, points: number, type: GradeType, daysAgo: number): GradeEntry => {
+    const date = dayKey(addDays(today, -daysAgo));
+    return { id: `demo-${subjectId}-${daysAgo}`, subjectId, points, type, date, semester: semesterForDate(date, startYear) };
+  };
+  d.grades.grades = [
+    grade('mathematik', 12, 'test', 40),
+    grade('englisch', 14, 'klausur', 35),
+    grade('physik', 13, 'test', 30),
+    grade('geschichte', 13, 'muendlich', 28),
+    grade('deutsch', 13, 'klausur', 22),
+    grade('musik', 15, 'sonstige', 20),
+    grade('chemie', 14, 'test', 15),
+    grade('biologie', 11, 'muendlich', 12),
+    grade('mathematik', 14, 'klausur', 9),
+  ];
 
   d.gym = {
     equipment: ['dumbbells', 'bench', 'incline_bench', 'barbell', 'squat_rack', 'pullup_bar', 'cable_machine', 'lat_pulldown', 'leg_press', 'leg_curl', 'treadmill', 'mat'],

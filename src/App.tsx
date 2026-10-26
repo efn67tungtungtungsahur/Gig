@@ -4,26 +4,29 @@ import { formatLong } from './lib/dates';
 import { useStore } from './lib/store';
 import { onNotificationTap } from './integrations/notify';
 import { ToastHost, toast } from './ui/components';
-import { IconCalendar, IconDumbbell, IconHeart, IconHome, IconRefresh, IconSettings } from './ui/icons';
+import { IconCalendar, IconDumbbell, IconGrades, IconHeart, IconHome, IconRefresh, IconSettings } from './ui/icons';
 import { NavContext, type Route } from './ui/nav';
 import CalendarScreen from './ui/screens/CalendarScreen';
 import Dashboard from './ui/screens/Dashboard';
+import GradesScreen from './ui/screens/GradesScreen';
 import HealthScreen from './ui/screens/HealthScreen';
 import ReportScreen from './ui/screens/ReportScreen';
 import SettingsScreen from './ui/screens/SettingsScreen';
 import TrainingScreen from './ui/screens/TrainingScreen';
 
 const TABS: { route: Route; label: string; icon: typeof IconHome }[] = [
-  { route: 'start', label: 'Übersicht', icon: IconHome },
+  { route: 'start', label: 'Start', icon: IconHome },
   { route: 'kalender', label: 'Kalender', icon: IconCalendar },
+  { route: 'noten', label: 'Noten', icon: IconGrades },
   { route: 'training', label: 'Training', icon: IconDumbbell },
   { route: 'gesundheit', label: 'Gesundheit', icon: IconHeart },
-  { route: 'einstellungen', label: 'Einstellungen', icon: IconSettings },
+  { route: 'einstellungen', label: 'Optionen', icon: IconSettings },
 ];
 
 const TITLES: Record<Route, string> = {
   start: 'Gig Fit',
   kalender: 'Kalender & Schule',
+  noten: 'Noten',
   training: 'Training',
   gesundheit: 'Gesundheit',
   einstellungen: 'Einstellungen',
@@ -87,6 +90,7 @@ export default function App() {
         <main className="content">
           {route === 'start' && <Dashboard />}
           {route === 'kalender' && <CalendarScreen />}
+          {route === 'noten' && <GradesScreen />}
           {route === 'training' && <TrainingScreen />}
           {route === 'gesundheit' && <HealthScreen />}
           {route === 'einstellungen' && <SettingsScreen />}

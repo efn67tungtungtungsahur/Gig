@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { eventDayKey, upcoming } from '../../domain/calendar';
-import { EQUIPMENT, EQUIPMENT_IDS, MUSCLE_LABEL } from '../../domain/exercises';
+import { EQUIPMENT, EQUIPMENT_GROUPS, EQUIPMENT_PRESETS, MUSCLE_LABEL } from '../../domain/exercises';
 import { latestSnapshot } from '../../domain/liftoff';
 import { planTraining } from '../../domain/planner';
 import { signed } from '../../domain/report';
@@ -8,13 +8,8 @@ import type { LiftoffSnapshot, MuscleGroup } from '../../domain/types';
 import { formatDate, formatShort, formatTime } from '../../lib/dates';
 import { useStore } from '../../lib/store';
 import { parseLiftoffText, type LiftoffDraft } from '../../domain/ocrParse';
-import type { Detection } from '../../domain/visionLabels';
-import { pickImages, takePhoto, type ImageInput } from '../../integrations/camera';
 import { readScreenshots } from '../../integrations/ocr';
-import { scanRoom } from '../../integrations/vision';
-import type { VisionProgress } from '../../integrations/visionEngine';
 import { Card, Empty, Sheet, Stat, toast, useAction } from '../components';
-import { IconCamera } from '../icons';
 import { useNav } from '../nav';
 
 const FREE_FOCUS: { label: string; groups: MuscleGroup[] }[] = [
@@ -30,10 +25,7 @@ export default function TrainingScreen() {
   const { report, data, settings, updateData } = useStore();
   const { go } = useNav();
   const { busy, run } = useAction();
-  const [previews, setPreviews] = useState<string[]>([]);
   const [editOpen, setEditOpen] = useState(false);
-  const [progress, setProgress] = useState<VisionProgress | null>(null);
-  const [review, setReview] = useState<Detection[] | null>(null);
   const [liftoffDraft, setLiftoffDraft] = useState<{ draft?: LiftoffDraft; version: number } | null>(null);
   const trainings = upcoming(report.events, new Date(), ['training'], 14);
   const [selected, setSelected] = useState<string | 'frei'>(trainings[0]?.id ?? 'frei');
@@ -60,48 +52,11 @@ export default function TrainingScreen() {
     return false;
   };
 
-  const scan = (source: 'kamera' | 'galerie') =>
-    run('scan', async () => {
-      if (guardDemo()) return;
-      let images: ImageInput[] = [];
-      if (source === 'kamera') {
-        const shot = await takePhoto();
-        if (shot) images = [shot.image];
-      } else {
-        images = await pickImages(4);
-      }
-      if (!images.length) return;
-      setPreviews((p) => [...p, ...images.map((i) => `data:${i.mediaType};base64,${i.base64}`)]);
-      setProgress({ phase: 'laden', percent: 0 });
-      try {
-        const found = await scanRoom(images, setProgress);
-        setReview(found);
-      } finally {
-        setProgress(null);
-      }
-    });
-
-  const confirmScan = async (ids: string[]) => {
-    await updateData((d) => ({
-      ...d,
-      gym: {
-        ...d.gym,
-        equipment: [...new Set([...d.gym.equipment, ...ids])],
-        scannedAt: new Date().toISOString(),
-        photosScanned: d.gym.photosScanned + 1,
-      },
-    }));
-    setReview(null);
-    toast(ids.length ? `${ids.length} Geräte übernommen. Tipp: Fotografiere auch die anderen Ecken.` : 'Nichts übernommen.');
-  };
-
-  const toggleEquipment = (id: string) => {
+  const setEquipment = (fn: (current: string[]) => string[]) => {
     if (guardDemo()) return;
-    void updateData((d) => ({
-      ...d,
-      gym: { ...d.gym, equipment: d.gym.equipment.includes(id) ? d.gym.equipment.filter((e) => e !== id) : [...d.gym.equipment, id] },
-    }));
+    void updateData((d) => ({ ...d, gym: { ...d.gym, equipment: fn(d.gym.equipment), scannedAt: new Date().toISOString() } }));
   };
+  const toggleEquipment = (id: string) => setEquipment((cur) => (cur.includes(id) ? cur.filter((e) => e !== id) : [...cur, id]));
 
   const importLiftoff = () =>
     run('liftoff', async () => {
@@ -132,53 +87,90 @@ export default function TrainingScreen() {
 
   const lift = latestSnapshot(data.liftoff);
   const ls = report.training.liftoff;
+  const ts = report.trainingStreak;
+
+  const markTraining = (eventId: string, status: 'done' | 'missed' | 'skipped' | null) => {
+    if (guardDemo()) return;
+    void updateData((d) => {
+      const log = { ...d.trainingLog };
+      if (status) log[eventId] = status;
+      else delete log[eventId];
+      return { ...d, trainingLog: log };
+    });
+  };
 
   return (
     <>
-      <Card title="Trainingsraum scannen" icon="📷">
-        <p className="small secondary" style={{ marginTop: 0 }}>
-          Fotografiere deinen Trainingsraum (gern mehrere Fotos aus verschiedenen Ecken). Die Bilderkennung auf deinem Handy erkennt die sichtbaren Geräte – daraus entstehen
-          deine Übungsvorschläge.
-        </p>
-        {previews.length > 0 && (
-          <div className="photo-strip" style={{ marginBottom: 10 }}>
-            {previews.map((p, i) => (
-              <img key={i} src={p} alt={`Foto ${i + 1}`} />
-            ))}
-          </div>
-        )}
-        <div className="row wrap">
-          <button className="btn primary grow" onClick={() => scan('kamera')} disabled={busy !== null}>
-            <IconCamera width={20} height={20} />
-            {equipment.length ? 'Weiteres Foto scannen' : 'Foto aufnehmen & scannen'}
-          </button>
-          <button className="btn grow" onClick={() => scan('galerie')} disabled={busy !== null}>
-            Aus der Galerie
-          </button>
-        </div>
-        {progress && (
-          <div className="banner info small" style={{ marginTop: 10 }}>
-            <span aria-hidden>⏳</span>
-            <span className="grow">
-              {progress.phase === 'laden' ? 'Erkennungsmodell wird geladen' : 'Analysiere Foto'} … {progress.percent} %
-              <div style={{ height: 4, borderRadius: 2, background: 'var(--accent-soft)', marginTop: 6 }}>
-                <div style={{ width: `${progress.percent}%`, height: 4, borderRadius: 2, background: 'var(--accent)' }} />
-              </div>
-            </span>
-          </div>
-        )}
-        <button className="btn ghost" style={{ marginTop: 6, paddingLeft: 0 }} onClick={() => setEditOpen(true)}>
-          Geräte von Hand auswählen
-        </button>
-        <p className="tiny muted" style={{ margin: 0 }}>
-          Kostenlos und auf dem Handy: Beim ersten Scan wird das offene Erkennungsmodell einmalig heruntergeladen (WLAN empfohlen), danach geht es
-          offline. Prüfe die Vorschläge kurz – nicht jedes Gerät wird sicher erkannt.
-        </p>
-        {equipment.length > 0 && (
-          <>
-            <div className="section-title" style={{ marginTop: 14 }}>
-              Erkannte Geräte ({equipment.length})
+      <Card>
+        <div className="streak">
+          <span className="flame" aria-hidden>
+            {ts.current > 0 ? '🔥' : '🧊'}
+          </span>
+          <div className="grow">
+            <div>
+              <span className="count">{ts.current}</span> <span className="secondary">Trainings-Serie</span>
             </div>
+            <div className="tiny muted">Geplante Trainings in Folge durchgezogen · Rekord {ts.best}</div>
+          </div>
+        </div>
+        <p className="tiny muted">
+          Die Serie richtet sich nach deinen Trainingsterminen im Kalender: Ruhetage zählen nicht, nur ein verpasstes Training beendet sie. Erledigt ist
+          ein Training, wenn an dem Tag ein Workout (Fitbit/Liftoff) erfasst wurde oder du es abhakst. Abgesagte Termine zählen nicht.
+          {ts.next ? ` Nächstes: ${ts.next.title} am ${formatShort(eventDayKey(ts.next))}.` : ''}
+        </p>
+        {ts.sessions.length === 0 ? (
+          <p className="small muted" style={{ marginBottom: 0 }}>
+            Noch keine vergangenen Trainings im Kalender. Termine mit „Training“, „Gym“, „Push“, „Beine“ … zählen automatisch.
+          </p>
+        ) : (
+          <ul className="list">
+            {ts.sessions.slice(0, 6).map(({ event: e, status, auto }) => (
+              <li key={e.id} className="row small">
+                <span aria-hidden>{status === 'done' ? '✅' : status === 'missed' ? '❌' : status === 'skipped' ? '➖' : '⏳'}</span>
+                <span className="grow">
+                  {e.title}
+                  <div className="tiny muted">
+                    {formatShort(eventDayKey(e))}
+                    {auto ? ' · Workout erfasst' : status === 'pending' ? ' · offen' : status === 'skipped' ? ' · abgesagt' : ''}
+                  </div>
+                </span>
+                {!auto && (
+                  <>
+                    <button className={`chip ${data.trainingLog[e.id] === 'done' ? 'on' : ''}`} onClick={() => markTraining(e.id, data.trainingLog[e.id] === 'done' ? null : 'done')}>
+                      Erledigt
+                    </button>
+                    <button className={`chip ${data.trainingLog[e.id] === 'skipped' ? 'on' : ''}`} onClick={() => markTraining(e.id, data.trainingLog[e.id] === 'skipped' ? null : 'skipped')}>
+                      Abgesagt
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card
+        title="Meine Geräte"
+        icon="🏠"
+        action={
+          <button className="btn ghost" onClick={() => setEditOpen(true)}>
+            {equipment.length ? 'Ändern' : 'Auswählen'}
+          </button>
+        }
+      >
+        {equipment.length === 0 ? (
+          <Empty
+            action={
+              <button className="btn primary block" onClick={() => setEditOpen(true)}>
+                Geräte auswählen
+              </button>
+            }
+          >
+            Gib an, welche Geräte du zum Trainieren hast. Daraus entstehen deine Übungsvorschläge. Ohne Auswahl gibt es nur Körpergewichtsübungen.
+          </Empty>
+        ) : (
+          <>
             <div className="chips">
               {equipment.map((id) => (
                 <span key={id} className="pill">
@@ -186,7 +178,11 @@ export default function TrainingScreen() {
                 </span>
               ))}
             </div>
-            {data.gym.scannedAt && <p className="tiny muted" style={{ margin: 0 }}>Zuletzt gescannt am {formatDate(new Date(data.gym.scannedAt))}</p>}
+            {data.gym.scannedAt && (
+              <p className="tiny muted" style={{ marginBottom: 0 }}>
+                Zuletzt geändert am {formatDate(new Date(data.gym.scannedAt))}
+              </p>
+            )}
           </>
         )}
       </Card>
@@ -373,20 +369,38 @@ export default function TrainingScreen() {
         )}
       </Card>
 
-      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title="Geräte im Trainingsraum">
+      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title="Meine Geräte">
         <p className="small muted" style={{ marginTop: 0 }}>
-          Tippe an, was in deinem Raum steht. Körpergewichtsübungen gehen immer.
+          Tippe an, was du hast. Körpergewichtsübungen gehen immer.
         </p>
-        <div className="chips">
-          {EQUIPMENT_IDS.map((id) => (
-            <button key={id} className={`chip ${equipment.includes(id) ? 'on' : ''}`} onClick={() => toggleEquipment(id)}>
-              {EQUIPMENT[id]}
-            </button>
-          ))}
+        <div className="field">
+          <span>Schnellauswahl</span>
+          <div className="chips">
+            {EQUIPMENT_PRESETS.map((p) => (
+              <button key={p.label} className="chip" onClick={() => setEquipment(() => [...p.ids])}>
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
+        {EQUIPMENT_GROUPS.map((g) => (
+          <div key={g.label} className="field">
+            <span>
+              {g.label} ({g.ids.filter((id) => equipment.includes(id)).length}/{g.ids.length})
+            </span>
+            <div className="chips">
+              {g.ids.map((id) => (
+                <button key={id} className={`chip ${equipment.includes(id) ? 'on' : ''}`} onClick={() => toggleEquipment(id)}>
+                  {EQUIPMENT[id]}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        <button className="btn primary block" onClick={() => setEditOpen(false)}>
+          Fertig ({equipment.length} Geräte)
+        </button>
       </Sheet>
-
-      {review && <ScanReviewSheet detections={review} known={equipment} onClose={() => setReview(null)} onConfirm={confirmScan} />}
 
       {liftoffDraft && (
         <LiftoffEntrySheet
@@ -402,58 +416,6 @@ export default function TrainingScreen() {
         />
       )}
     </>
-  );
-}
-
-const PRESELECT_CONFIDENCE = 0.5;
-
-/** Lets you confirm what the room scan found before it is saved. */
-function ScanReviewSheet({
-  detections,
-  known,
-  onClose,
-  onConfirm,
-}: {
-  detections: Detection[];
-  known: string[];
-  onClose: () => void;
-  onConfirm: (ids: string[]) => Promise<void>;
-}) {
-  // Pre-select the confident hits (and always the best one); weaker ones stay as suggestions.
-  const [picked, setPicked] = useState<Set<string>>(
-    () => new Set(detections.filter((d, i) => i === 0 || d.confidence >= PRESELECT_CONFIDENCE).map((d) => d.id)),
-  );
-  const toggle = (id: string) =>
-    setPicked((p) => {
-      const n = new Set(p);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  return (
-    <Sheet open onClose={onClose} title="Erkannte Geräte">
-      {detections.length === 0 ? (
-        <p className="small muted" style={{ marginTop: 0 }}>
-          Auf dem Foto wurden keine Trainingsgeräte erkannt. Versuch es mit einem anderen Blickwinkel oder wähle die Geräte von Hand aus.
-        </p>
-      ) : (
-        <>
-          <p className="small muted" style={{ marginTop: 0 }}>
-            Tippe an, was wirklich da ist. Die Prozentzahl zeigt, wie sicher sich die Erkennung ist.
-          </p>
-          <div className="chips" style={{ marginBottom: 14 }}>
-            {detections.map((d) => (
-              <button key={d.id} className={`chip ${picked.has(d.id) ? 'on' : ''}`} onClick={() => toggle(d.id)}>
-                {EQUIPMENT[d.id] ?? d.id} · {Math.round(d.confidence * 100)} %{known.includes(d.id) ? ' (schon dabei)' : ''}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      <button className="btn primary block" onClick={() => void onConfirm([...picked])}>
-        {picked.size ? `${picked.size} Geräte übernehmen` : 'Schließen'}
-      </button>
-    </Sheet>
   );
 }
 

@@ -405,6 +405,8 @@ export default function TrainingScreen() {
   );
 }
 
+const PRESELECT_CONFIDENCE = 0.5;
+
 /** Lets you confirm what the room scan found before it is saved. */
 function ScanReviewSheet({
   detections,
@@ -417,7 +419,10 @@ function ScanReviewSheet({
   onClose: () => void;
   onConfirm: (ids: string[]) => Promise<void>;
 }) {
-  const [picked, setPicked] = useState<Set<string>>(() => new Set(detections.filter((d) => d.confidence >= 0.3).map((d) => d.id)));
+  // Pre-select the confident hits (and always the best one); weaker ones stay as suggestions.
+  const [picked, setPicked] = useState<Set<string>>(
+    () => new Set(detections.filter((d, i) => i === 0 || d.confidence >= PRESELECT_CONFIDENCE).map((d) => d.id)),
+  );
   const toggle = (id: string) =>
     setPicked((p) => {
       const n = new Set(p);

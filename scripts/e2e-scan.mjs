@@ -11,7 +11,10 @@ const UA = 'GigFit-CI/1.0 (https://github.com/efn67tungtungtungsahur/Gig)';
 const QUERIES = [
   ['treadmill', 'treadmills gym'],
   ['dumbbells', 'dumbbell rack gym'],
-  ['squat_rack', 'power rack barbell gym'],
+  ['squat_rack', 'squat rack'],
+  ['bench', 'weight bench dumbbells'],
+  ['cable_machine', 'cable crossover machine'],
+  ['bike', 'exercise bike gym'],
   ['leg_press', 'leg press machine'],
   ['rower', 'indoor rowing machine'],
   ['kettlebell', 'kettlebells'],
@@ -67,7 +70,9 @@ for (const [expected, query] of QUERIES) {
     await page.locator('.toast').click();
     continue;
   }
-  const chips = await sheet.locator('.chip').allTextContents();
+  const chips = await Promise.all(
+    (await sheet.locator('.chip').all()).map(async (c) => `${(await c.getAttribute('class'))?.includes('on') ? '☑' : '☐'} ${await c.textContent()}`),
+  );
   const secs = ((Date.now() - started) / 1000).toFixed(1);
   if (chips.length) ok++;
   console.log(`${chips.length ? '✓' : '✗'} [erwartet: ${expected}] ${img.title} (${secs}s): ${chips.join(' | ') || '—'}`);

@@ -1,11 +1,13 @@
 import type { Detection } from '../domain/visionLabels';
+import { hashId } from '../lib/dates';
 import type { ImageInput } from './camera';
 import type { VisionProgress } from './visionEngine';
 
 // Browser/app wrapper around the on-device model. transformers.js is loaded
 // lazily so it doesn't slow down app start.
 
-const CACHE_KEY = 'gigfit.vision.prompts.v1';
+/** Prompt embeddings are cached per prompt set, so changed prompts are recomputed. */
+let cacheKey = '';
 
 async function engine() {
   const [mod, tf] = await Promise.all([import('./visionEngine'), import('@huggingface/transformers')]);
@@ -15,8 +17,9 @@ async function engine() {
   // so the scan works offline once the model is cached.
   const wasm = tf.env.backends.onnx.wasm;
   if (wasm) wasm.wasmPaths = undefined;
+  cacheKey = `gigfit.vision.prompts.${hashId(`${mod.VISION_MODEL}|${mod.allPrompts().join('|')}`)}`;
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const cached = localStorage.getItem(cacheKey);
     if (cached) mod.setPromptEmbeddings(JSON.parse(cached) as number[][]);
   } catch {
     /* no cache */
@@ -26,7 +29,7 @@ async function engine() {
 
 async function rememberPrompts(embeds: number[][]): Promise<void> {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(embeds.map((v) => v.map((x) => Math.round(x * 1e5) / 1e5))));
+    localStorage.setItem(cacheKey, JSON.stringify(embeds.map((v) => v.map((x) => Math.round(x * 1e5) / 1e5))));
   } catch {
     /* storage full – recompute next time */
   }

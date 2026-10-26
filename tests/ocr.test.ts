@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { linesToRows, parseDay, parseDuration, parseLiftoffText, parseOralBText } from '../src/domain/ocrParse';
 import { dayKey } from '../src/lib/dates';
+import { EQUIPMENT_IDS } from '../src/domain/exercises';
+import { detectFromEmbeddings, EQUIPMENT_PROMPTS, tileRects, visionClasses } from '../src/domain/visionLabels';
 
 describe('OCR rows', () => {
   it('joins columns that ML Kit returns as separate blocks into rows', () => {
@@ -79,5 +81,27 @@ describe('Oral-B screenshots', () => {
     expect(s[2].pressureWarnings).toBe(1);
     expect(dayKey(new Date(s[3].date))).toBe('2026-10-19');
     expect(new Date(s[3].date).getHours()).toBe(7);
+  });
+});
+
+describe('room scan labels', () => {
+  it('has prompts for exactly the equipment the planner knows', () => {
+    expect(Object.keys(EQUIPMENT_PROMPTS).sort()).toEqual([...EQUIPMENT_IDS].sort());
+  });
+  it('covers the whole photo with tiles', () => {
+    const rects = tileRects(1000, 800);
+    expect(rects[0]).toEqual({ x: 0, y: 0, w: 1000, h: 800 });
+    expect(rects.every((r) => r.x >= 0 && r.y >= 0 && r.x + r.w <= 1000 && r.y + r.h <= 800)).toBe(true);
+  });
+  it('reports equipment that wins a tile and ignores background', () => {
+    const classes = visionClasses();
+    const dim = classes.length;
+    // One-hot class embeddings; tile 1 looks like class 0, tile 2 like a background class.
+    const classEmbeds = classes.map((_, i) => Array.from({ length: dim }, (_, k) => (k === i ? 1 : 0)));
+    const bg = classes.findIndex((c) => c.id === null);
+    const tile = (i: number) => Array.from({ length: dim }, (_, k) => (k === i ? 1 : 0));
+    const found = detectFromEmbeddings([tile(0), tile(bg)], classes, classEmbeds);
+    expect(found.map((d) => d.id)).toEqual([classes[0].id]);
+    expect(found[0].confidence).toBeGreaterThan(0.9);
   });
 });

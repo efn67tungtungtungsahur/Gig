@@ -2,17 +2,66 @@ import { useEffect, useId, useRef, type ReactElement } from 'react';
 import { RANK_NAMES } from '../domain/body';
 import type { MuscleGroup } from '../domain/types';
 
-// Cartoon body, front and back, in a 220 × 424 box (centre x = 110): light
-// skin, muscles separated by thin skin-coloured gaps, open hands. Muscles
-// describe the left half and are mirrored.
+// Cartoon body, front and back (centre x = 110): light skin, muscles
+// separated by thin skin-coloured gaps, open hands. Muscles describe the left
+// half and are mirrored.
 
 const CX = 110;
 const VIEW_W = CX * 2;
 
 type Seg = [number, number, number, number, number, number];
 
+// The raw drawing below is long-limbed; torso, arms and (a little) legs are
+// compressed vertically when the paths are built. Head and hands keep their size.
+const TORSO_TOP = 78;
+const CROTCH = 242;
+const TORSO_SCALE = 0.8;
+const LEG_SCALE = 0.9;
+const SHOULDER_Y = 92;
+const WRIST_Y = 236;
+const ARM_SCALE = 0.66;
+
+function torsoY(y: number): number {
+  if (y <= TORSO_TOP) return y;
+  if (y <= CROTCH) return TORSO_TOP + (y - TORSO_TOP) * TORSO_SCALE;
+  return TORSO_TOP + (CROTCH - TORSO_TOP) * TORSO_SCALE + (y - CROTCH) * LEG_SCALE;
+}
+
+function armY(y: number): number {
+  const shoulder = torsoY(SHOULDER_Y);
+  if (y <= SHOULDER_Y) return torsoY(y);
+  if (y <= WRIST_Y) return shoulder + (y - SHOULDER_Y) * ARM_SCALE;
+  return shoulder + (WRIST_Y - SHOULDER_Y) * ARM_SCALE + (y - WRIST_Y) * 0.92;
+}
+
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+function reshapePoint(x: number, y: number): [number, number] {
+  // Blend between torso (0) and arm (1); in the left half the arms lie left of x ≈ 68–74.
+  const w = y > SHOULDER_Y ? Math.min(1, Math.max(0, (74 - x) / 6)) : 0;
+  // Arms get a little thicker around their axis (shoulder → wrist) and move in slightly.
+  const axis = 64 + ((Math.min(y, 290) - 110) * (38 - 64)) / (240 - 110);
+  const thick = axis + (x - axis) * 1.2;
+  const ax = thick + (70 - thick) * 0.12;
+  return [r1(x + (ax - x) * w), r1(torsoY(y) * (1 - w) + armY(y) * w)];
+}
+
+/** Applies the proportions to an absolute M/L/C/Q path. */
+function reshape(d: string): string {
+  return d.replace(/([MLCQ])([^MLCQZ]*)/g, (_, cmd: string, args: string) => {
+    const n = args.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    const out: number[] = [];
+    for (let i = 0; i + 1 < n.length; i += 2) out.push(...reshapePoint(n[i], n[i + 1]));
+    return `${cmd}${out.join(' ')} `;
+  });
+}
+
+const VIEW_H = Math.ceil(torsoY(424));
+
 /** Closed outline from a left-side path that starts and ends on the centre line. */
-function outline(start: [number, number], segs: Seg[]): string {
+function outline(rawStart: [number, number], rawSegs: Seg[]): string {
+  const start = reshapePoint(...rawStart);
+  const segs = rawSegs.map((s) => [...reshapePoint(s[0], s[1]), ...reshapePoint(s[2], s[3]), ...reshapePoint(s[4], s[5])] as Seg);
   const pts: [number, number][] = [start, ...segs.map((s) => [s[4], s[5]] as [number, number])];
   const left = segs.map((s) => `C${s.join(' ')}`).join(' ');
   const right = segs
@@ -53,8 +102,8 @@ const BODY = outline(
   ],
 );
 
-const PALM = 'M29 238 C24 244 23 254 25 262 C27 268 35 270 40 266 C45 262 47 252 45 242 Z';
-const FINGERS = 'M25 262 L20 280 M29.5 266 L26.5 286 M34.5 267 L33.5 288 M39.5 265 L40.5 284 M44 250 L50 262';
+const PALM = reshape('M29 238 C24 244 23 254 25 262 C27 268 35 270 40 266 C45 262 47 252 45 242 Z');
+const FINGERS = reshape('M25 262 L20 280 M29.5 266 L26.5 286 M34.5 267 L33.5 288 M39.5 265 L40.5 284 M44 250 L50 262');
 const FACE = 'M110 12 C124 12 134 24 134 40 C134 56 124 70 110 70 C96 70 86 56 86 40 C86 24 96 12 110 12 Z';
 const HAIR_FRONT = 'M86 40 C84 22 94 6 112 6 C126 6 138 16 134 38 C131 30 127 25 120 22 C114 27 103 27 97 22 C92 26 88 32 86 40 Z';
 const HAIR_BACK = 'M86 42 C84 22 94 6 110 6 C126 6 136 20 134 42 C132 56 122 64 110 64 C98 64 88 56 86 42 Z';
@@ -68,7 +117,7 @@ const DELT = 'M72 94 C62 96 56 106 55 118 C55 128 57 136 60 142 C63 134 68 126 7
 const UPPER_ARM = 'M57 128 C62 124 68 124 72 128 C72 142 68 158 62 170 C57 174 51 172 49 166 C50 152 52 138 57 128 Z';
 const FOREARM = 'M46 182 C51 178 56 178 59 182 C56 198 51 216 44 232 L35 232 C35 214 39 198 46 182 Z';
 
-const FRONT: Shape[] = [
+const FRONT_RAW: Shape[] = [
   { d: FOREARM },
   { d: 'M99 78 C93 84 84 88 74 91 L104 92 C103 87 101 82 99 78 Z', muscle: 'ruecken' },
   { d: DELT, muscle: 'schultern' },
@@ -91,7 +140,7 @@ const FRONT: Shape[] = [
 ];
 
 /** Thin skin-coloured lines inside muscles – decoration only. */
-const FRONT_LINES = [
+const FRONT_LINES_RAW = [
   'M68 98 C63 108 59 120 57 132', // delt heads
   'M108 104 C99 104 89 106 80 110', // upper chest
   'M62 129 C63 143 62 156 59 168', // biceps heads
@@ -99,7 +148,7 @@ const FRONT_LINES = [
   'M86 178 L95 186 M86 194 L96 202', // obliques
 ];
 
-const BACK: Shape[] = [
+const BACK_RAW: Shape[] = [
   { d: FOREARM },
   { d: 'M110 70 C107 76 103 81 99 83 C91 86 81 89 72 92 C81 97 92 104 99 116 C104 128 107 146 110 166 Z', muscle: 'ruecken' },
   { d: DELT, muscle: 'schultern' },
@@ -116,7 +165,7 @@ const BACK: Shape[] = [
   { d: 'M96 351 C100.5 347 104 352 104 362 C104.5 374 101.5 386 97 394 C95 380 95 364 96 351 Z', muscle: 'waden' },
 ];
 
-const BACK_LINES = [
+const BACK_LINES_RAW = [
   'M68 98 C63 108 59 120 57 132', // delt heads
   'M65 128 C62 142 61 152 60 160', // triceps heads
   'M53 158 C57 164 63 164 66 158',
@@ -124,6 +173,11 @@ const BACK_LINES = [
   'M86 126 C90 130 95 132 98 132', // teres
   'M84 160 C90 172 96 186 99 198', // lat fibres
 ];
+
+const FRONT = FRONT_RAW.map((s) => ({ ...s, d: reshape(s.d) }));
+const BACK = BACK_RAW.map((s) => ({ ...s, d: reshape(s.d) }));
+const FRONT_LINES = FRONT_LINES_RAW.map(reshape);
+const BACK_LINES = BACK_LINES_RAW.map(reshape);
 
 const MIRROR = `matrix(-1 0 0 1 ${VIEW_W} 0)`;
 
@@ -179,7 +233,7 @@ function Side({ shapes, lines, back, label, fills, selected, onSelect, hot }: Fi
 
   return (
     <figure>
-      <svg viewBox={`0 0 ${VIEW_W} 424`} role="img" aria-label={`Körper ${label}`}>
+      <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" aria-label={`Körper ${label}`}>
         <defs>
           <linearGradient id={sheen} x1="0" y1="0" x2="0.35" y2="1">
             <stop offset="0" stopColor="#fff" stopOpacity="0.3" />

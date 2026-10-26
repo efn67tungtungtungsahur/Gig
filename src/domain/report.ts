@@ -7,6 +7,7 @@ import { learningPhase, type LearningPhase } from './reminders';
 import { analyzeSleep, type SleepAnalysis } from './sleep';
 import { abiForecast, blockI, formatPoints, gradeStreak, semesterAverage, semesterForDate, type AbiForecast, type BlockI, type GradeStreak } from './grades';
 import { trainingStreak, type TrainingStreak } from './streaks';
+import { toWorkoutEntry } from './workoutLog';
 import type { AppData, BloodPressure, ClassifiedEvent, Measurement, Semester, Settings, WorkoutEntry } from './types';
 
 export interface AreaScore {
@@ -134,9 +135,13 @@ export function analyzeBody(data: AppData, today = new Date()): BodyAnalysis {
   };
 }
 
-/** Health Connect workouts plus Liftoff workouts, without duplicates. */
+/** Workouts logged in the app, plus Liftoff and Health Connect, without duplicates. */
 export function allWorkouts(data: AppData): WorkoutEntry[] {
-  const out = [...data.liftoff.workouts];
+  const out = data.workoutLog.filter((w) => w.end).map(toWorkoutEntry);
+  for (const w of data.liftoff.workouts) {
+    const t = new Date(w.start).getTime();
+    if (!out.some((o) => Math.abs(new Date(o.start).getTime() - t) < 30 * 60_000)) out.push(w);
+  }
   for (const w of data.health.workouts) {
     const t = new Date(w.start).getTime();
     if (!out.some((o) => Math.abs(new Date(o.start).getTime() - t) < 30 * 60_000)) out.push(w);

@@ -13,6 +13,7 @@ import HealthScreen from './ui/screens/HealthScreen';
 import ReportScreen from './ui/screens/ReportScreen';
 import SettingsScreen from './ui/screens/SettingsScreen';
 import TrainingScreen from './ui/screens/TrainingScreen';
+import WorkoutScreen from './ui/screens/WorkoutScreen';
 
 const TABS: { route: Route; label: string; icon: typeof IconHome }[] = [
   { route: 'start', label: 'Start', icon: IconHome },
@@ -31,7 +32,11 @@ const TITLES: Record<Route, string> = {
   gesundheit: 'Gesundheit',
   einstellungen: 'Einstellungen',
   bericht: 'Gesamt-Update',
+  workout: 'Training läuft',
 };
+
+/** Sub pages and where the back button leads. */
+const PARENT: Partial<Record<Route, Route>> = { bericht: 'start', workout: 'training' };
 
 export default function App() {
   const { ready, syncing, syncAll, settings } = useStore();
@@ -53,7 +58,7 @@ export default function App() {
   routeRef.current = route;
   useEffect(() => {
     const handle = CapApp.addListener('backButton', () => {
-      if (routeRef.current !== 'start') go('start');
+      if (routeRef.current !== 'start') go(PARENT[routeRef.current] ?? 'start');
       else void CapApp.minimizeApp();
     });
     return () => {
@@ -74,8 +79,8 @@ export default function App() {
     <NavContext.Provider value={{ route, go, sub }}>
       <div className="app">
         <header className="topbar">
-          {route === 'bericht' && (
-            <button className="icon-btn" onClick={() => go('start')} aria-label="Zurück">
+          {PARENT[route] && (
+            <button className="icon-btn" onClick={() => go(PARENT[route]!)} aria-label="Zurück">
               ‹
             </button>
           )}
@@ -95,10 +100,11 @@ export default function App() {
           {route === 'gesundheit' && <HealthScreen />}
           {route === 'einstellungen' && <SettingsScreen />}
           {route === 'bericht' && <ReportScreen />}
+          {route === 'workout' && <WorkoutScreen />}
         </main>
         <nav className="tabbar">
           {TABS.map((t) => (
-            <button key={t.route} className={`tab ${route === t.route || (t.route === 'start' && route === 'bericht') ? 'active' : ''}`} onClick={() => go(t.route)}>
+            <button key={t.route} className={`tab ${route === t.route || PARENT[route] === t.route ? 'active' : ''}`} onClick={() => go(t.route)}>
               <t.icon />
               {t.label}
             </button>

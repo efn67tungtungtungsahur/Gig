@@ -47,6 +47,15 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {data.activeWorkout && (
+        <button className="banner info" style={{ marginBottom: 12, width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit' }} onClick={() => go('workout')}>
+          <span aria-hidden>⏱</span>
+          <span className="grow">
+            <strong>{data.activeWorkout.title}</strong> läuft – tippen zum Weitermachen
+          </span>
+        </button>
+      )}
+
       {settings.demoMode && (
         <div className="banner info" style={{ marginBottom: 12 }}>
           <span aria-hidden>🧪</span>

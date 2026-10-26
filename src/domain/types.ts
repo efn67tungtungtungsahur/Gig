@@ -212,6 +212,36 @@ export interface GradeSettings {
   streakMin: number;
 }
 
+export interface LoggedSet {
+  weight: number | null; // kg
+  reps: number | null;
+  done: boolean;
+}
+
+export interface LoggedExercise {
+  id: string;
+  /** Catalogue id (exercises.ts); free exercises only have a name. */
+  exerciseId?: string;
+  name: string;
+  targetSets?: number;
+  targetReps?: string;
+  restSec?: number;
+  sets: LoggedSet[];
+  note?: string;
+}
+
+/** A training recorded in the app. */
+export interface LoggedWorkout {
+  id: string;
+  start: string; // ISO
+  end?: string; // ISO – missing while the workout is running
+  title: string;
+  /** Planned calendar training this workout belongs to. */
+  eventId?: string;
+  exercises: LoggedExercise[];
+  note?: string;
+}
+
 /** Manual status of a planned training (calendar event id → status). Abgesagt = counts neither way. */
 export type TrainingLog = Record<string, 'done' | 'missed' | 'skipped'>;
 
@@ -224,6 +254,10 @@ export interface AppData {
   holidays: HolidayData;
   grades: GradesData;
   trainingLog: TrainingLog;
+  /** Finished workouts recorded in the app. */
+  workoutLog: LoggedWorkout[];
+  /** The workout currently being recorded (survives closing the app). */
+  activeWorkout: LoggedWorkout | null;
 }
 
 export type TrainingGoal = 'muskelaufbau' | 'kraft' | 'ausdauer' | 'fitness';

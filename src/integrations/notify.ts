@@ -7,7 +7,11 @@ const CHANNELS = [
   { id: 'ferien', name: 'Ferien-Countdown', description: 'Alle 2 Wochen: Tage bis zu den nächsten Ferien', importance: 3 as const },
   { id: 'schlaf', name: 'Schlaf', description: 'Abendliche Schlaf-Erinnerung (pausiert in Lernphasen)', importance: 3 as const },
   { id: 'bericht', name: 'Wochen-Update', description: 'Gesamtauswertung deiner Daten', importance: 3 as const },
+  { id: 'training', name: 'Pausen-Timer', description: 'Meldet sich, wenn die Satzpause vorbei ist', importance: 4 as const },
 ];
+
+/** Fixed id of the rest-timer notification – kept when the reminder plan is rebuilt. */
+const REST_ID = 7;
 
 let channelsReady = false;
 
@@ -31,9 +35,9 @@ export async function applyNotificationPlan(plan: PlannedNotification[]): Promis
   if (!isNative) return 0;
   if (!(await ensureNotificationPermission())) return 0;
   await ensureChannels();
-  const pending = await LocalNotifications.getPending();
-  if (pending.notifications.length) {
-    await LocalNotifications.cancel({ notifications: pending.notifications.map((n) => ({ id: n.id })) });
+  const pending = (await LocalNotifications.getPending()).notifications.filter((n) => n.id !== REST_ID);
+  if (pending.length) {
+    await LocalNotifications.cancel({ notifications: pending.map((n) => ({ id: n.id })) });
   }
   // Android caps alarms per app; keep the nearest 120.
   const batch = plan.slice(0, 120);
@@ -81,4 +85,31 @@ export async function sendTestNotification(): Promise<boolean> {
     ],
   });
   return true;
+}
+
+/** Notification when the rest between sets is over (also with the screen off). */
+export async function scheduleRestEnd(seconds: number, next: string): Promise<void> {
+  if (!isNative || seconds <= 0) return;
+  const status = await LocalNotifications.checkPermissions();
+  if (status.display !== 'granted') return;
+  await ensureChannels();
+  await LocalNotifications.cancel({ notifications: [{ id: REST_ID }] });
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: REST_ID,
+        title: '⏱️ Pause vorbei',
+        body: `Weiter geht's: ${next}`,
+        channelId: 'training',
+        schedule: { at: new Date(Date.now() + seconds * 1000), allowWhileIdle: true },
+        smallIcon: 'ic_stat_gig',
+        extra: { route: 'workout' },
+      },
+    ],
+  });
+}
+
+export async function cancelRestEnd(): Promise<void> {
+  if (!isNative) return;
+  await LocalNotifications.cancel({ notifications: [{ id: REST_ID }] });
 }

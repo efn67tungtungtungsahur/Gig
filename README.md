@@ -23,6 +23,7 @@ Gig Fit ist eine Android-App, die deinen **Google Kalender**, **Fitbit**, **With
 | **Übersicht** | Gesamt-Score und Scores pro Bereich (Schlaf, Aktivität, Körper, Training, Zahnpflege), nächste Tests/Klausuren, Ferien-Countdown, alle Daten einheitlich auf einen Blick |
 | **Schlaf** | Analyse von Dauer, Regelmäßigkeit, Effizienz und Tief-/REM-Schlaf. Sagt dir, ob du deinen Schlaf verbessern solltest, und schlägt eine Bettzeit vor. **Keine Schlaf-Erinnerungen in der Lernphase:** liegt laut Kalender eine Klausur in den nächsten 7 Tagen (einstellbar) oder steht „Lernen“ im Kalender, bleibt die Erinnerung aus |
 | **Meine Geräte** | Du wählst aus, welche Geräte du hast (nach Kategorien, mit Schnellauswahl). Gig Fit schlägt dann für jedes Training aus deinem Kalender („Push“, „Beine“, „Ganzkörper“ …) passende Übungen mit Sätzen, Wiederholungen und Pausen vor |
+| **Training erfassen** | Starte das Training aus dem Vorschlag oder leer und trag für jede Übung die Sätze mit **Gewicht und Wiederholungen** ein. Die App zeigt, was du letztes Mal geschafft hast, schlägt das nächste Gewicht vor (hast du alle Sätze am oberen Ende geschafft → +2,5 kg), startet nach jedem Satz einen Pausen-Timer (mit Benachrichtigung) und meldet neue Rekorde. Verlauf aller Trainings und Fortschritts-Diagramm pro Übung |
 | **Noten** | Notenpunkte für 1.–4. Halbjahr wie in Notan: Fachschnitt, Halbjahresschnitt (LK zählen doppelt), Block I nach § 30 GOSTV Brandenburg (8 LK-Halbjahre doppelt + 28 Grundkurse, E I = P ÷ 44 × 40) und Abi-Prognose. Klausur-Anteil pro Fach einstellbar |
 | **Serien** | **Noten-Serie:** Tests und Klausuren ab 13 Punkten in Folge. **Trainings-Serie:** geplante Trainings in Folge durchgezogen. Beide laufen nicht nach einem Tag ab, sondern richten sich nach deinen Terminen im Kalender |
 | **Erinnerungen** | **Test:** 1 Woche, 3 Tage und 2 Tage vorher · **Klausur:** 2 Wochen, 1 Woche, 3 Tage und 2 Tage vorher (Uhrzeit und Abstände einstellbar) |
@@ -55,6 +56,13 @@ Google schaltet die alte Fitbit-Web-API am **30.10.2026** ab. Gig Fit liest desh
 - **Rangliste, Rang & Errungenschaften:** Mach in der Liftoff-App Screenshots davon und importiere sie im Tab **Training**. Die Texterkennung auf dem Handy liest Platz, XP, Level, Serie, Rangliste und Errungenschaften aus; du prüfst die Werte vor dem Speichern. Alternativ kannst du sie von Hand eintragen.
 - **Workouts (experimentell):** Anmeldung mit deinem Liftoff-Login (E-Mail und Passwort, nicht „Mit Google anmelden“). Liftoff hat keine offizielle Schnittstelle. Gig Fit nutzt dieselbe Schnittstelle wie die Liftoff-App, deshalb kann das jederzeit aufhören zu funktionieren. Gespeichert wird nur ein Anmelde-Token, nicht dein Passwort.
 
+### Training erfassen
+Im Tab **Training** auf **„▶ … starten“** tippen. Das Training läuft weiter, auch wenn du die App schließt; auf der Übersicht erscheint dann „Training läuft“.
+- Gewicht und Wiederholungen eintragen und mit **✓** abhaken. Leere Felder übernehmen den grauen Vorschlag.
+- Nach jedem Satz läuft die Pause (±15 s anpassbar); ist die App im Hintergrund, kommt eine Benachrichtigung.
+- **+ Übung hinzufügen:** aus über 80 Übungen oder eine eigene. **+ Satz** fügt einen weiteren Satz hinzu.
+- **Beenden:** Nur abgehakte Sätze werden gespeichert. Das Training zählt automatisch für deine Trainings-Serie.
+
 ### Oral-B iO
 Oral-B bietet keine offene Schnittstelle. Mach in der Oral-B-App Screenshots von Verlauf und Putzübersicht und importiere sie unter **Gesundheit → Zähne**, oder tippe nach dem Putzen auf **„Gerade geputzt“**.
 
@@ -82,7 +90,7 @@ npx cap sync android && cd android && ./gradlew assembleRelease
 ```
 
 Aufbau:
-- `src/domain/`: reine Logik (Kalender-Erkennung, Erinnerungen, Ferien, Schlafanalyse, Trainingsplaner, Noten & Abi-Berechnung, Serien, Gesamtbericht, Benachrichtigungsplan), getestet in `tests/`
+- `src/domain/`: reine Logik (Kalender-Erkennung, Erinnerungen, Ferien, Schlafanalyse, Trainingsplaner, Trainings-Tagebuch, Noten & Abi-Berechnung, Serien, Gesamtbericht, Benachrichtigungsplan), getestet in `tests/`
 - `src/integrations/`: Health Connect, iCal, Texterkennung (ML Kit), Liftoff, Benachrichtigungen
 - `src/ui/`: Oberfläche (React)
 - `android/`: Capacitor-Android-Projekt

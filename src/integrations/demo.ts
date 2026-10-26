@@ -1,7 +1,7 @@
 import { addDays, dayKey, startOfDay } from '../lib/dates';
 import { emptyData } from '../domain/defaults';
 import { semesterForDate } from '../domain/grades';
-import type { AppData, BrushSession, CalEvent, GradeEntry, GradeType, SleepNight, WorkoutEntry } from '../domain/types';
+import type { AppData, BrushSession, CalEvent, GradeEntry, GradeType, LoggedWorkout, SleepNight, WorkoutEntry } from '../domain/types';
 
 /** Deterministic noise so the demo looks the same on every start. */
 function noise(i: number, salt: number): number {
@@ -111,6 +111,65 @@ export function demoData(now = new Date()): AppData {
     });
   });
   d.liftoff.workouts = workouts;
+
+  // In der App erfasste Trainings mit allen Sätzen – das Gewicht steigt langsam.
+  type Planned = [id: string, name: string, startKg: number, reps: number, sets: number];
+  const routines: Record<string, Planned[]> = {
+    push: [
+      ['kh_bankdruecken', 'Kurzhantel-Bankdrücken', 22, 10, 4],
+      ['schulterdruecken_kh', 'Schulterdrücken (Kurzhanteln)', 14, 10, 3],
+      ['seitheben', 'Seitheben', 8, 12, 3],
+      ['trizeps_kabel', 'Trizepsdrücken am Kabel', 20, 12, 3],
+    ],
+    pull: [
+      ['latzug', 'Latzug', 52.5, 10, 4],
+      ['kabelrudern', 'Kabelrudern sitzend', 45, 10, 3],
+      ['kh_curls', 'Kurzhantel-Curls', 12, 10, 3],
+    ],
+    beine: [
+      ['kniebeuge', 'Kniebeugen (Langhantel)', 72.5, 8, 4],
+      ['beinpresse', 'Beinpresse', 120, 10, 3],
+      ['beinbeuger', 'Beinbeuger (Maschine)', 40, 12, 3],
+    ],
+  };
+  // Acht Wochen Verlauf; ältere Trainings liegen vor dem Kalenderausschnitt.
+  const skipped = new Set(pastTrainings.filter((_, i) => i % 5 === 3).map((e) => e.id));
+  const gymDays: { start: Date; title: string; eventId?: string }[] = [];
+  for (let i = -56; i < -14; i++) {
+    const day = addDays(today, i);
+    const wd = day.getDay();
+    if (wd === 1) gymDays.push({ start: at(day, 17), title: 'Gym – Push' });
+    if (wd === 3) gymDays.push({ start: at(day, 17), title: 'Gym – Pull' });
+    if (wd === 5) gymDays.push({ start: at(day, 16, 30), title: 'Beintraining' });
+  }
+  for (const e of pastTrainings) if (!skipped.has(e.id)) gymDays.push({ start: new Date(e.start), title: e.title, eventId: e.id });
+  const seen: Record<string, number> = {};
+  const logged: LoggedWorkout[] = [];
+  gymDays.forEach(({ start, title, eventId }, i) => {
+    const kind = title.includes('Push') ? 'push' : title.includes('Pull') ? 'pull' : 'beine';
+    const k = (seen[kind] = (seen[kind] ?? -1) + 1);
+    logged.push({
+      id: `demo-w-${i}`,
+      start: start.toISOString(),
+      end: new Date(start.getTime() + (58 + Math.round(noise(i, 30) * 15)) * 60_000).toISOString(),
+      title,
+      eventId,
+      exercises: routines[kind].map(([id, name, kg, reps, sets], j) => ({
+        id: `demo-x-${i}-${j}`,
+        exerciseId: id,
+        name,
+        targetSets: sets,
+        targetReps: `${reps}–${reps + 2}`,
+        restSec: j === 0 ? 150 : 90,
+        sets: Array.from({ length: sets }, (_, n) => ({
+          weight: kg + Math.floor(k / 2) * 2.5,
+          reps: reps + (k % 2) * 2 - (n >= 2 && noise(i * 7 + j, n) < 0.5 ? 1 : 0),
+          done: true,
+        })),
+      })),
+    });
+  });
+  d.workoutLog = logged;
   // Cardio days were ticked off by hand in the demo.
   for (const e of events) if (e.title === 'Cardio' && new Date(e.end) < now) d.trainingLog[e.id] = 'done';
   d.liftoff.snapshots = [

@@ -102,6 +102,8 @@ export function emptyData(): AppData {
     holidays: { periods: BUNDLED_HOLIDAYS, source: 'eingebaut' },
     grades: { subjects: DEFAULT_SUBJECTS.map((s) => ({ ...s })), grades: [] },
     trainingLog: {},
+    workoutLog: [],
+    activeWorkout: null,
   };
 }
 
@@ -140,5 +142,7 @@ export function mergeData(stored: Partial<AppData> | null | undefined): AppData 
     holidays: rest.holidays?.periods?.length ? rest.holidays : d.holidays,
     grades: { ...d.grades, ...rest.grades },
     trainingLog: { ...rest.trainingLog },
+    workoutLog: rest.workoutLog ?? [],
+    activeWorkout: rest.activeWorkout ?? null,
   };
 }

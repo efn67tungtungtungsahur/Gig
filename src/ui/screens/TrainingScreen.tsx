@@ -5,12 +5,14 @@ import { latestSnapshot } from '../../domain/liftoff';
 import { planTraining } from '../../domain/planner';
 import { signed } from '../../domain/report';
 import type { LiftoffSnapshot, MuscleGroup } from '../../domain/types';
-import { formatDate, formatShort, formatTime } from '../../lib/dates';
+import { formatVolume, personalRecords, workoutDurationMin, workoutFromPlan, workoutSetCount, workoutVolume } from '../../domain/workoutLog';
+import { addDays, dayKey, formatDate, formatShort, formatTime } from '../../lib/dates';
 import { useStore } from '../../lib/store';
 import { parseLiftoffText, type LiftoffDraft } from '../../domain/ocrParse';
 import { readScreenshots } from '../../integrations/ocr';
 import { Card, Empty, Sheet, Stat, toast, useAction } from '../components';
 import { useNav } from '../nav';
+import { ExerciseProgressSheet, WorkoutDetailSheet } from '../workoutSheets';
 
 const FREE_FOCUS: { label: string; groups: MuscleGroup[] }[] = [
   { label: 'Ganzkörper', groups: ['beine', 'brust', 'ruecken', 'schultern', 'core'] },
@@ -30,6 +32,9 @@ export default function TrainingScreen() {
   const trainings = upcoming(report.events, new Date(), ['training'], 14);
   const [selected, setSelected] = useState<string | 'frei'>(trainings[0]?.id ?? 'frei');
   const [freeFocus, setFreeFocus] = useState(0);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ key: string; name: string } | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const equipment = data.gym.equipment;
   const event = trainings.find((t) => t.id === selected);
@@ -89,6 +94,27 @@ export default function TrainingScreen() {
   const ls = report.training.liftoff;
   const ts = report.trainingStreak;
 
+  const active = data.activeWorkout;
+  const logged = [...data.workoutLog].sort((a, b) => b.start.localeCompare(a.start));
+  const weekAgo = addDays(new Date(), -7).toISOString();
+  const lastWeek = logged.filter((w) => w.start >= weekAgo);
+  const topExercises = [...personalRecords(data.workoutLog).values()].sort((a, b) => b.sessions - a.sessions).slice(0, 8);
+  const detail = logged.find((w) => w.id === detailId);
+
+  const startWorkout = (withPlan: boolean) => {
+    if (guardDemo()) return;
+    if (data.activeWorkout) {
+      go('workout');
+      return;
+    }
+    const now = new Date();
+    // Link to the calendar training only when it is today.
+    const eventId = event && eventDayKey(event) === dayKey(now) ? event.id : undefined;
+    const title = event ? event.title : withPlan ? FREE_FOCUS[freeFocus].label : 'Training';
+    const w = workoutFromPlan(withPlan ? plan : null, data.workoutLog, { title, eventId, now });
+    void updateData((d) => ({ ...d, activeWorkout: w })).then(() => go('workout'));
+  };
+
   const markTraining = (eventId: string, status: 'done' | 'missed' | 'skipped' | null) => {
     if (guardDemo()) return;
     void updateData((d) => {
@@ -101,6 +127,42 @@ export default function TrainingScreen() {
 
   return (
     <>
+      <Card title="Training erfassen" icon="📝">
+        {active ? (
+          <div className="row">
+            <div className="grow">
+              <div className="strong">{active.title}</div>
+              <div className="small muted">
+                Läuft seit {workoutDurationMin(active)} min · {workoutSetCount(active)} Sätze abgehakt
+              </div>
+            </div>
+            <button className="btn primary" onClick={() => go('workout')}>
+              Weiter
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="small secondary" style={{ marginTop: 0 }}>
+              Trag jede Übung mit Sätzen, Gewicht und Wiederholungen ein. Die App merkt sich das letzte Mal, schlägt dir das nächste Gewicht vor und
+              zählt das Training automatisch für deine Serie.
+            </p>
+            <button className="btn primary block" onClick={() => startWorkout(true)}>
+              ▶ {event ? event.title : FREE_FOCUS[freeFocus].label} starten ({plan.exercises.length} Übungen)
+            </button>
+            <button className="btn block" style={{ marginTop: 8 }} onClick={() => startWorkout(false)}>
+              Leeres Training starten
+            </button>
+          </>
+        )}
+        {logged.length > 0 && (
+          <div className="stats" style={{ marginTop: 12 }}>
+            <Stat label="Letzte 7 Tage" value={lastWeek.length} delta={lastWeek.length === 1 ? 'Training' : 'Trainings'} />
+            <Stat label="Volumen 7 T." value={formatVolume(lastWeek.reduce((s, w) => s + workoutVolume(w), 0))} />
+            <Stat label="Sätze 7 T." value={lastWeek.reduce((s, w) => s + workoutSetCount(w), 0)} />
+          </div>
+        )}
+      </Card>
+
       <Card>
         <div className="streak">
           <span className="flame" aria-hidden>
@@ -115,7 +177,7 @@ export default function TrainingScreen() {
         </div>
         <p className="tiny muted">
           Die Serie richtet sich nach deinen Trainingsterminen im Kalender: Ruhetage zählen nicht, nur ein verpasstes Training beendet sie. Erledigt ist
-          ein Training, wenn an dem Tag ein Workout (Fitbit/Liftoff) erfasst wurde oder du es abhakst. Abgesagte Termine zählen nicht.
+          ein Training, wenn du es an dem Tag hier erfasst, ein Workout von Fitbit/Liftoff kommt oder du es abhakst. Abgesagte Termine zählen nicht.
           {ts.next ? ` Nächstes: ${ts.next.title} am ${formatShort(eventDayKey(ts.next))}.` : ''}
         </p>
         {ts.sessions.length === 0 ? (
@@ -253,6 +315,59 @@ export default function TrainingScreen() {
             💡 {h}
           </p>
         ))}
+        {!active && plan.exercises.length > 0 && (
+          <button className="btn primary block" style={{ marginTop: 12 }} onClick={() => startWorkout(true)}>
+            ▶ Mit diesen Übungen starten
+          </button>
+        )}
+      </Card>
+
+      <Card title="Verlauf & Fortschritt" icon="📈">
+        {logged.length === 0 ? (
+          <p className="small muted" style={{ margin: 0 }}>
+            Noch keine Trainings erfasst. Nach dem ersten Training siehst du hier jede Einheit mit allen Sätzen und deinen Fortschritt pro Übung.
+          </p>
+        ) : (
+          <>
+            <ul className="list">
+              {(showAll ? logged : logged.slice(0, 5)).map((w) => (
+                <li key={w.id}>
+                  <button
+                    style={{ width: '100%', background: 'none', border: 0, padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit' }}
+                    onClick={() => setDetailId(w.id)}
+                  >
+                    <div className="row between small">
+                      <span className="strong">{w.title}</span>
+                      <span className="muted">
+                        {formatShort(new Date(w.start))} · {workoutDurationMin(w)} min
+                      </span>
+                    </div>
+                    <div className="tiny muted">
+                      {workoutSetCount(w)} Sätze · {formatVolume(workoutVolume(w))} · {w.exercises.map((e) => e.name).join(', ')}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {logged.length > 5 && (
+              <button className="btn ghost" style={{ paddingLeft: 0 }} onClick={() => setShowAll(!showAll)}>
+                {showAll ? 'Weniger anzeigen' : `Alle ${logged.length} anzeigen`}
+              </button>
+            )}
+            {topExercises.length > 0 && (
+              <>
+                <div className="section-title">Fortschritt pro Übung</div>
+                <div className="chips">
+                  {topExercises.map((r) => (
+                    <button key={r.key} className="chip" onClick={() => setProgress({ key: r.key, name: r.name })}>
+                      {r.name} · {r.maxWeight ? `${String(r.maxWeight).replace('.', ',')} kg` : `${r.sessions}×`}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </Card>
 
       <Card
@@ -401,6 +516,25 @@ export default function TrainingScreen() {
           Fertig ({equipment.length} Geräte)
         </button>
       </Sheet>
+
+      {detail && (
+        <WorkoutDetailSheet
+          workout={detail}
+          onClose={() => setDetailId(null)}
+          onExercise={(key, name) => {
+            setDetailId(null);
+            setProgress({ key, name });
+          }}
+          onDelete={() => {
+            if (guardDemo()) return;
+            void updateData((d) => ({ ...d, workoutLog: d.workoutLog.filter((w) => w.id !== detail.id) }));
+            setDetailId(null);
+            toast('Training gelöscht.');
+          }}
+        />
+      )}
+
+      {progress && <ExerciseProgressSheet log={data.workoutLog} exerciseKey={progress.key} name={progress.name} onClose={() => setProgress(null)} />}
 
       {liftoffDraft && (
         <LiftoffEntrySheet
